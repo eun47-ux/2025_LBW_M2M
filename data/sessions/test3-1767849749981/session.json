@@ -1,0 +1,47 @@
+{
+  "sessionId": "test3-1767849749981",
+  "sessionName": "test3",
+  "ownerId": "86i6qrak",
+  "labelMap": {
+    "B": "86i6qrak",
+    "A": "vm6yq00f",
+    "C": "y9z564qa"
+  },
+  "cropMetaArr": [
+    {
+      "id": "86i6qrak",
+      "rect": {
+        "x": 221,
+        "y": 161,
+        "width": 178,
+        "height": 290
+      }
+    },
+    {
+      "id": "vm6yq00f",
+      "rect": {
+        "x": 18,
+        "y": 186,
+        "width": 178,
+        "height": 265
+      }
+    },
+    {
+      "id": "y9z564qa",
+      "rect": {
+        "x": 372,
+        "y": 178,
+        "width": 178,
+        "height": 273
+      }
+    }
+  ],
+  "originalSavedName": "original.png",
+  "audio": {
+    "filename": "recording.m4a",
+    "path": "/Users/ijieun/CHI 25 LBW/mvp-service/data/sessions/test3-1767849749981/audio/recording.m4a",
+    "uploadedAt": "2026-01-08T05:23:14.148Z",
+    "mimetype": "audio/x-m4a",
+    "size": 7329303
+  }
+}

@@ -1,0 +1,69 @@
+{
+  "owner_label": "A",
+  "scenes": [
+    {
+      "scene_id": "AB_01",
+      "pair": [
+        "A",
+        "B"
+      ],
+      "evidence_quotes": [
+        "용문산 갑자기 용문산에 가자고 해가지고 대학교 때 용문산에 갔어 시예버스를 처음 타고 갔지",
+        "그걸 타고 걸어가가지고 여기 계곡 근처에 자리를 잡았지"
+      ],
+      "scene_text": "A group of university students riding a city bus for the first time, then walking and settling near a valley at Yongmunsan mountain.",
+      "do_not_include": [
+        "assumptions",
+        "invented emotions"
+      ]
+    },
+    {
+      "scene_id": "AB_02",
+      "pair": [
+        "A",
+        "B"
+      ],
+      "evidence_quotes": [
+        "500냥 하우스 같은 데서 밥 먹고",
+        "500냥 하우스? 응 다 500원이야 밥이 다 500원 종로에"
+      ],
+      "scene_text": "University students eating inexpensive meals at a place called '500냥 하우스' in Jongno.",
+      "do_not_include": [
+        "assumptions",
+        "invented emotions"
+      ]
+    },
+    {
+      "scene_id": "AB_03",
+      "pair": [
+        "A",
+        "B"
+      ],
+      "evidence_quotes": [
+        "노래방 하루 종일 주말에 만나서 2시간 3시간 노래를 막 부르고 그랬어",
+        "노래방 1시간 얼마? 그때 얼마였지?"
+      ],
+      "scene_text": "Friends spending time singing in a karaoke room for a few hours on weekends.",
+      "do_not_include": [
+        "assumptions",
+        "invented emotions"
+      ]
+    },
+    {
+      "scene_id": "AB_04",
+      "pair": [
+        "A",
+        "B"
+      ],
+      "evidence_quotes": [
+        "압구정에 그게 유명했어 밥집이 별로 없었거든 분식점 말고 없었는데 거기에 부대찌개가 생겼어",
+        "부대찌개가 엄청 처음에 부대찌개가 처음 생겨서 엄청 유명했고"
+      ],
+      "scene_text": "Students eating and enjoying the newly popular budaejjigae (army stew) restaurant in Apgujeong.",
+      "do_not_include": [
+        "assumptions",
+        "invented emotions"
+      ]
+    }
+  ]
+}

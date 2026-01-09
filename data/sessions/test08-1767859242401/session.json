@@ -1,0 +1,40 @@
+{
+  "sessionId": "test08-1767859242401",
+  "sessionName": "test08",
+  "ownerId": "acnwnh5q",
+  "labelMap": {
+    "A": "acnwnh5q",
+    "B": "b14uqwvh",
+    "C": "8wmsv5oz"
+  },
+  "cropMetaArr": [
+    {
+      "id": "acnwnh5q",
+      "rect": {
+        "x": 218,
+        "y": 157,
+        "width": 199,
+        "height": 294
+      }
+    },
+    {
+      "id": "8wmsv5oz",
+      "rect": {
+        "x": 366,
+        "y": 169,
+        "width": 199,
+        "height": 282
+      }
+    },
+    {
+      "id": "b14uqwvh",
+      "rect": {
+        "x": 4,
+        "y": 189,
+        "width": 199,
+        "height": 262
+      }
+    }
+  ],
+  "originalSavedName": "original.png"
+}
