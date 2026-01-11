@@ -74,22 +74,13 @@ function expandPixelRect(rect, imgW, imgH, pad = { left: 0.12, right: 0.12, top:
 }
 
 /**
- * Assign labels with Owner fixed to A.
- * Others are assigned left-to-right by xCenter: B, C, D, E, F...
+ * Assign numeric labels left-to-right: 1,2,3...
  */
-function assignLabelsOwnerA(crops, ownerId) {
-  const owner = crops.find((c) => c.id === ownerId);
-  if (!owner) return {};
-
+function assignLabelsLeftToRight(crops) {
   const sorted = [...crops].sort((a, b) => a.rect.x + a.rect.width / 2 - (b.rect.x + b.rect.width / 2));
-  const others = sorted.filter((c) => c.id !== ownerId);
-
   const labels = {};
-  labels["A"] = ownerId;
-
-  const labelPool = ["B", "C", "D", "E", "F", "G"];
-  for (let i = 0; i < Math.min(labelPool.length, others.length); i++) {
-    labels[labelPool[i]] = others[i].id;
+  for (let i = 0; i < sorted.length; i++) {
+    labels[String(i + 1)] = sorted[i].id;
   }
   return labels;
 }
@@ -200,15 +191,21 @@ export default function App() {
     if (ownerId === id) setOwnerId(null);
   };
 
-  const labelMap = useMemo(() => {
-    if (!ownerId) return {};
-    return assignLabelsOwnerA(cropsSaved, ownerId);
-  }, [cropsSaved, ownerId]);
+  const labelMap = useMemo(() => assignLabelsLeftToRight(cropsSaved), [cropsSaved]);
 
   const ownerLabel = useMemo(() => {
     if (!ownerId) return null;
-    return "A";
-  }, [ownerId]);
+    const entry = Object.entries(labelMap).find(([, id]) => id === ownerId);
+    return entry ? entry[0] : null;
+  }, [ownerId, labelMap]);
+
+  const cropLabelById = useMemo(() => {
+    const map = {};
+    for (const [label, id] of Object.entries(labelMap)) {
+      map[id] = label;
+    }
+    return map;
+  }, [labelMap]);
 
   /**
    * Upload to backend (optional endpoint)
@@ -255,6 +252,21 @@ export default function App() {
     setScenesPreview(null);
     setRunAllResults(null);
     alert(`업로드 성공! sessionId=${data.sessionId || sid}`);
+
+    const finalSessionId = data.sessionId || sid;
+    try {
+      const labelsRes = await fetch(`http://localhost:3001/api/session/${finalSessionId}/build-labels`, {
+        method: "POST",
+      });
+      const labelsJson = await labelsRes.json();
+      console.log("build-labels:", labelsJson);
+      if (!labelsJson.ok) {
+        alert("labels 생성 실패: " + (labelsJson.error || ""));
+      }
+    } catch (e) {
+      console.error(e);
+      alert("labels 생성 실패: " + (e?.message || String(e)));
+    }
   };
 
   return (
@@ -571,7 +583,7 @@ export default function App() {
               <div style={{ marginTop: 6, fontSize: 13, color: "#444" }}>
                 저장된 크롭: <b>{cropsSaved.length}</b>개
                 <br />
-                Owner: <b>{ownerId ? "선택됨 (A)" : "미선택"}</b>
+                Owner: <b>{ownerId ? `선택됨 (#${ownerLabel || "?"})` : "미선택"}</b>
               </div>
 
               {ownerId && (
@@ -598,13 +610,14 @@ export default function App() {
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <h3 style={{ margin: 0 }}>저장된 크롭</h3>
             <div style={{ color: "#666", fontSize: 13 }}>
-              클릭해서 Owner로 지정 (Owner는 <b>A</b>로 고정)
+              클릭해서 Owner로 지정 (라벨은 왼쪽부터 1,2,3...)
             </div>
           </div>
 
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 10 }}>
             {cropsSaved.map((c, idx) => {
               const isOwner = c.id === ownerId;
+              const label = cropLabelById[c.id] || String(idx + 1);
               return (
                 <div
                   key={c.id}
@@ -631,7 +644,7 @@ export default function App() {
                           fontWeight: 800,
                         }}
                       >
-                      {isOwner ? "OWNER (A)" : `Crop ${idx + 1}`}
+                      {isOwner ? `OWNER (#${label})` : `#${label}`}
                     </div>
                   </div>
 

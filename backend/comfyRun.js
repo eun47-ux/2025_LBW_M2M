@@ -42,6 +42,25 @@ export function patchWorkflow({ workflowTemplate, ownerFilename, partnerFilename
     wf[geminiId].inputs.seed = seed;
   }
 
+  // 3) Wan2.2 (CLIP positive) 프롬프트도 동일하게 세팅
+  const clipIds = Object.keys(wf).filter((id) => wf[id]?.class_type === "CLIPTextEncode");
+  if (clipIds.length) {
+    const positiveId =
+      clipIds.find((id) => {
+        const title = wf[id]?._meta?.title || "";
+        return /positive/i.test(title);
+      }) ||
+      clipIds.find((id) => {
+        const text = wf[id]?.inputs?.text || "";
+        return text && !/low quality|blurry|negative/i.test(text.toLowerCase());
+      }) ||
+      clipIds[0];
+
+    if (wf[positiveId]?.inputs) {
+      wf[positiveId].inputs.text = promptText;
+    }
+  }
+
   return wf;
 }
 

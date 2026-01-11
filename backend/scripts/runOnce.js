@@ -8,7 +8,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // ✅ 템플릿 JSON 경로 (workflows 폴더)
-const templatePath = path.join(__dirname, "..", "workflows", "jieun_M2M image generation.json");
+const preferredTemplatePath = path.join(__dirname, "..", "workflows", "jieun_m2m image+wan2.2.json");
+const fallbackTemplatePath = path.join(__dirname, "..", "workflows", "jieun_M2M image generation.json");
+const templatePath = fs.existsSync(preferredTemplatePath) ? preferredTemplatePath : fallbackTemplatePath;
 
 // ✅ 핵심: 함수로 만들기
 export async function runOnceForPair({
@@ -33,6 +35,14 @@ export async function runOnceForPair({
       `labels.json must contain ${ownerLabel} and ${partnerLabel}. Got: ${JSON.stringify(labelToFilename, null, 2)}`
     );
   }
+
+  console.log("▶ Comfy inputs:", {
+    ownerLabel,
+    partnerLabel,
+    ownerFilename,
+    partnerFilename,
+    promptPreview: String(promptText || "").slice(0, 160),
+  });
 
   const wf = patchWorkflow({
     workflowTemplate: template,

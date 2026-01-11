@@ -14,35 +14,67 @@ export async function runAllScenes(sessionId) {
   if (!fs.existsSync(scenesPath)) throw new Error("scenes.json not found: " + scenesPath);
 
   const scenesJson = JSON.parse(fs.readFileSync(scenesPath, "utf-8"));
+  const ownerLabel = scenesJson.owner_label || "1";
   const scenes = scenesJson.scenes || [];
-  if (!scenes.length) throw new Error("No scenes in scenes.json");
+  const pairs = scenesJson.pairs || [];
+  if (!scenes.length && !pairs.length) throw new Error("No scenes in scenes.json");
 
   const results = [];
 
-  for (const scene of scenes) {
-    const [p1, p2] = scene.pair || [];
-    if (!p1 || !p2) continue;
+  if (pairs.length) {
+    for (const pairItem of pairs) {
+      const pair = pairItem.pair || [];
+      const [p1, p2] = pair;
+      if (!p1 || !p2) continue;
+      if (p1 !== ownerLabel && p2 !== ownerLabel) continue;
+      const partnerLabel = p1 === ownerLabel ? p2 : p1;
 
-    // owner 항상 A니까 partner는 pair에서 A가 아닌 쪽으로
-    const partnerLabel = p1 === "A" ? p2 : p1;
-    const promptText = scene.scene_text;
+      const scenesForPair = Array.isArray(pairItem.scenes) ? pairItem.scenes : [];
+      for (const scene of scenesForPair) {
+        const promptText = scene.image_prompt || scene.scene_text;
+        if (!promptText) continue;
 
-    const r = await runOnceForPair({
-      sessionDir,
-      ownerLabel: "A",
-      partnerLabel,
-      promptText,
-      // seed를 장면마다 다르게 주고 싶으면:
-      // seed: Math.floor(Math.random() * 1e12),
-    });
+        const r = await runOnceForPair({
+          sessionDir,
+          ownerLabel,
+          partnerLabel,
+          promptText,
+        });
 
-    results.push({
-      scene_id: scene.scene_id,
-      pair: scene.pair,
-      prompt_id: r.prompt_id,
-    });
+        results.push({
+          scene_id: scene.scene_id,
+          pair,
+          prompt_id: r.prompt_id,
+        });
 
-    console.log(`✅ ${scene.scene_id} done → prompt_id=${r.prompt_id}`);
+        console.log(`✅ ${scene.scene_id} done → prompt_id=${r.prompt_id}`);
+      }
+    }
+  } else {
+    for (const scene of scenes) {
+      const [p1, p2] = scene.pair || [];
+      if (!p1 || !p2) continue;
+
+      if (p1 !== ownerLabel && p2 !== ownerLabel) continue;
+      const partnerLabel = p1 === ownerLabel ? p2 : p1;
+      const promptText = scene.image_prompt || scene.scene_text;
+      if (!promptText) continue;
+
+      const r = await runOnceForPair({
+        sessionDir,
+        ownerLabel,
+        partnerLabel,
+        promptText,
+      });
+
+      results.push({
+        scene_id: scene.scene_id,
+        pair: scene.pair,
+        prompt_id: r.prompt_id,
+      });
+
+      console.log(`✅ ${scene.scene_id} done → prompt_id=${r.prompt_id}`);
+    }
   }
 
   const outPath = path.join(sessionDir, "comfy_results.json");

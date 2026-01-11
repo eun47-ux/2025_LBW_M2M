@@ -316,10 +316,13 @@ app.post("/api/session/:sessionId/scenes", async (req, res) => {
     }
 
     const labelMap = session.labelMap || {};
-    const labels = Object.keys(labelMap); // 예: ["A","B","C"]
-    const ownerLabel = "A";
+    const labels = Object.keys(labelMap); // 예: ["1","2","3"]
+    const ownerLabel =
+      labels.find((label) => labelMap[label] === session.ownerId) || labels[0] || "1";
 
-    const participants = labels.length ? labels : ["A", "B", "C"];
+    const participants = labels.length
+      ? labels.sort((a, b) => Number(a) - Number(b) || a.localeCompare(b))
+      : ["1", "2", "3"];
 
     const out = await transcriptToScenes({
       transcript,
@@ -338,14 +341,23 @@ app.post("/api/session/:sessionId/scenes", async (req, res) => {
     };
     fs.writeFileSync(sessionJsonPath, JSON.stringify(session, null, 2), "utf-8");
 
+    const pairs = out.scenesJson?.pairs || [];
+    const flatScenes = out.scenesJson?.scenes || [];
+    const scenesPreviewCount = pairs.length
+      ? pairs.reduce((acc, p) => acc + ((p.scenes || []).length), 0)
+      : flatScenes.length;
+    const scenesPreviewFirst = pairs.length
+      ? (pairs.find((p) => (p.scenes || []).length)?.scenes || [])[0] || null
+      : flatScenes[0] || null;
+
     return res.json({
       ok: true,
       sessionId,
       scenesPath: out.scenesPath,
       ownerLabel,
       participants,
-      scenesPreviewCount: out.scenesJson?.scenes?.length ?? 0,
-      scenesPreviewFirst: out.scenesJson?.scenes?.[0] ?? null,
+      scenesPreviewCount,
+      scenesPreviewFirst,
     });
   } catch (e) {
     console.error(e);
