@@ -1,0 +1,64 @@
+{
+  "sessionId": "test01-1768194814989",
+  "sessionName": "test01",
+  "ownerId": "cp212v26",
+  "labelMap": {
+    "1": "vcu2nz1s",
+    "2": "cp212v26",
+    "3": "9oay9yfj"
+  },
+  "cropMetaArr": [
+    {
+      "id": "vcu2nz1s",
+      "rect": {
+        "x": 0,
+        "y": 88,
+        "width": 259,
+        "height": 363
+      }
+    },
+    {
+      "id": "cp212v26",
+      "rect": {
+        "x": 168,
+        "y": 123,
+        "width": 241,
+        "height": 328
+      }
+    },
+    {
+      "id": "9oay9yfj",
+      "rect": {
+        "x": 334,
+        "y": 147,
+        "width": 241,
+        "height": 304
+      }
+    }
+  ],
+  "originalSavedName": "original.png",
+  "audio": {
+    "filename": "recording.m4a",
+    "path": "/Users/ijieun/CHI 25 LBW/mvp-service/data/sessions/test01-1768194814989/audio/recording.m4a",
+    "uploadedAt": "2026-01-12T05:13:46.335Z",
+    "mimetype": "audio/x-m4a",
+    "size": 7329303
+  },
+  "transcript": {
+    "filename": "transcript.txt",
+    "path": "/Users/ijieun/CHI 25 LBW/mvp-service/data/sessions/test01-1768194814989/transcript.txt",
+    "createdAt": "2026-01-12T05:14:28.540Z",
+    "audioUsed": "recording.m4a"
+  },
+  "scenes": {
+    "filename": "scenes.json",
+    "path": "/Users/ijieun/CHI 25 LBW/mvp-service/data/sessions/test01-1768194814989/scenes.json",
+    "createdAt": "2026-01-12T05:14:52.466Z",
+    "ownerLabel": "2",
+    "participants": [
+      "1",
+      "2",
+      "3"
+    ]
+  }
+}

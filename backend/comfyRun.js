@@ -1,9 +1,17 @@
 // backend/comfyRun.js
 import fs from "fs";
 import axios from "axios";
+import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.resolve(__dirname, ".env") });
 
 // ✅ ComfyUI 서버 주소
 const COMFY = "http://143.248.107.38:8188";
+const COMFY_API_KEY = process.env.COMFY_API_KEY || "";
 
 // 템플릿 로드
 export function loadWorkflowTemplate(templatePath) {
@@ -66,6 +74,11 @@ export function patchWorkflow({ workflowTemplate, ownerFilename, partnerFilename
 
 // ComfyUI /prompt 실행
 export async function runComfyPrompt(workflow) {
-  const res = await axios.post(`${COMFY}/prompt`, { prompt: workflow }, { timeout: 600000 });
+  const payload = { prompt: workflow };
+  if (COMFY_API_KEY) {
+    payload.extra_data = { api_key_comfy_org: COMFY_API_KEY };
+  }
+
+  const res = await axios.post(`${COMFY}/prompt`, payload, { timeout: 600000 });
   return res.data; // {prompt_id: "..."}
 }

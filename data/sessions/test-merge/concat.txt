@@ -1,0 +1,7 @@
+file '/Users/ijieun/CHI 25 LBW/mvp-service/data/sessions/test-merge/videos/1.친구1시작.mp4'
+file '/Users/ijieun/CHI 25 LBW/mvp-service/data/sessions/test-merge/videos/2.친구1과 서점.mp4'
+file '/Users/ijieun/CHI 25 LBW/mvp-service/data/sessions/test-merge/videos/3.친구1과 독서토론.mp4'
+file '/Users/ijieun/CHI 25 LBW/mvp-service/data/sessions/test-merge/videos/6.친구2와 분식집.mp4'
+file '/Users/ijieun/CHI 25 LBW/mvp-service/data/sessions/test-merge/videos/7.친구2와 노래방.mp4'
+file '/Users/ijieun/CHI 25 LBW/mvp-service/data/sessions/test-merge/videos/8.다같이 걷기 압구정역.mp4'
+file '/Users/ijieun/CHI 25 LBW/mvp-service/data/sessions/test-merge/videos/9.다같이버스.mp4'

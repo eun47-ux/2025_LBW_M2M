@@ -1,0 +1,421 @@
+{
+  "1": {
+    "inputs": {
+      "temperature": 0.5,
+      "modalities": "image+text",
+      "aspect_ratio": "auto"
+    },
+    "class_type": "AV_NanoBananaApiConfig",
+    "_meta": {
+      "title": "NanoBanana API Config"
+    }
+  },
+  "2": {
+    "inputs": {
+      "images_a": [
+        "4",
+        0
+      ],
+      "images_b": [
+        "3",
+        0
+      ]
+    },
+    "class_type": "Image Batch",
+    "_meta": {
+      "title": "Image Batch"
+    }
+  },
+  "3": {
+    "inputs": {
+      "mode": "resize",
+      "supersample": "true",
+      "resampling": "lanczos",
+      "rescale_factor": 2,
+      "resize_width": 512,
+      "resize_height": 768,
+      "image": [
+        "10",
+        0
+      ]
+    },
+    "class_type": "Image Resize",
+    "_meta": {
+      "title": "Image Resize"
+    }
+  },
+  "4": {
+    "inputs": {
+      "mode": "resize",
+      "supersample": "true",
+      "resampling": "lanczos",
+      "rescale_factor": 2,
+      "resize_width": 512,
+      "resize_height": 768,
+      "image": [
+        "9",
+        0
+      ]
+    },
+    "class_type": "Image Resize",
+    "_meta": {
+      "title": "Image Resize"
+    }
+  },
+  "5": {
+    "inputs": {
+      "images": [
+        "7",
+        0
+      ]
+    },
+    "class_type": "PreviewImage",
+    "_meta": {
+      "title": "Preview Image"
+    }
+  },
+  "6": {
+    "inputs": {
+      "prompt": "오른쪽 두 사람이 함께 분식집에서 떡볶이를 먹고 있는 장면 시대 배경은 1980년대 대한민국 서울",
+      "model": "gemini-2.5-flash-image",
+      "seed": 640145898295971,
+      "aspect_ratio": "16:9",
+      "response_modalities": "IMAGE+TEXT",
+      "system_prompt": "You are an expert image-generation engine. You must ALWAYS produce an image.\nInterpret all user input—regardless of format, intent, or abstraction—as literal visual directives for image composition.\nIf a prompt is conversational or lacks specific visual details, you must creatively invent a concrete visual scenario that depicts the concept.\nPrioritize generating the visual representation above any text, formatting, or conversational requests.",
+      "speak_and_recognation": {
+        "__value__": [
+          false,
+          true
+        ]
+      },
+      "images": [
+        "2",
+        0
+      ]
+    },
+    "class_type": "GeminiImageNode",
+    "_meta": {
+      "title": "Nano Banana (Google Gemini Image)"
+    }
+  },
+  "7": {
+    "inputs": {
+      "mode": "resize",
+      "supersample": "true",
+      "resampling": "lanczos",
+      "rescale_factor": 2,
+      "resize_width": 1280,
+      "resize_height": 720,
+      "image": [
+        "6",
+        0
+      ]
+    },
+    "class_type": "Image Resize",
+    "_meta": {
+      "title": "Image Resize"
+    }
+  },
+  "8": {
+    "inputs": {
+      "filename_prefix": "ComfyUI",
+      "images": [
+        "7",
+        0
+      ]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "Save Image"
+    }
+  },
+  "9": {
+    "inputs": {
+      "image": "crop_01.png"
+    },
+    "class_type": "LoadImage",
+    "_meta": {
+      "title": "Load Image"
+    }
+  },
+  "10": {
+    "inputs": {
+      "image": "crop_02.png"
+    },
+    "class_type": "LoadImage",
+    "_meta": {
+      "title": "Load Image"
+    }
+  },
+  "22": {
+    "inputs": {
+      "samples": [
+        "32",
+        0
+      ],
+      "vae": [
+        "35",
+        0
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE Decode"
+    }
+  },
+  "28": {
+    "inputs": {
+      "clip_name": "umt5_xxl_fp8_e4m3fn_scaled.safetensors",
+      "type": "wan",
+      "device": "default"
+    },
+    "class_type": "CLIPLoader",
+    "_meta": {
+      "title": "Load CLIP"
+    }
+  },
+  "31": {
+    "inputs": {
+      "fps": 16,
+      "images": [
+        "22",
+        0
+      ]
+    },
+    "class_type": "CreateVideo",
+    "_meta": {
+      "title": "Create Video"
+    }
+  },
+  "32": {
+    "inputs": {
+      "add_noise": "disable",
+      "noise_seed": 0,
+      "steps": 4,
+      "cfg": 1,
+      "sampler_name": "euler",
+      "scheduler": "simple",
+      "start_at_step": 2,
+      "end_at_step": 4,
+      "return_with_leftover_noise": "disable",
+      "model": [
+        "34",
+        0
+      ],
+      "positive": [
+        "45",
+        0
+      ],
+      "negative": [
+        "45",
+        1
+      ],
+      "latent_image": [
+        "41",
+        0
+      ]
+    },
+    "class_type": "KSamplerAdvanced",
+    "_meta": {
+      "title": "KSampler (Advanced)"
+    }
+  },
+  "33": {
+    "inputs": {
+      "shift": 5.000000000000001,
+      "model": [
+        "37",
+        0
+      ]
+    },
+    "class_type": "ModelSamplingSD3",
+    "_meta": {
+      "title": "ModelSamplingSD3"
+    }
+  },
+  "34": {
+    "inputs": {
+      "shift": 5.000000000000001,
+      "model": [
+        "36",
+        0
+      ]
+    },
+    "class_type": "ModelSamplingSD3",
+    "_meta": {
+      "title": "ModelSamplingSD3"
+    }
+  },
+  "35": {
+    "inputs": {
+      "vae_name": "wan_2.1_vae.safetensors"
+    },
+    "class_type": "VAELoader",
+    "_meta": {
+      "title": "Load VAE"
+    }
+  },
+  "36": {
+    "inputs": {
+      "lora_name": "wan2.2_i2v_lightx2v_4steps_lora_v1_low_noise.safetensors",
+      "strength_model": 1.2000000000000002,
+      "model": [
+        "42",
+        0
+      ]
+    },
+    "class_type": "LoraLoaderModelOnly",
+    "_meta": {
+      "title": "LoraLoaderModelOnly"
+    }
+  },
+  "37": {
+    "inputs": {
+      "lora_name": "wan2.2_i2v_lightx2v_4steps_lora_v1_low_noise.safetensors",
+      "strength_model": 1.2000000000000002,
+      "model": [
+        "40",
+        0
+      ]
+    },
+    "class_type": "LoraLoaderModelOnly",
+    "_meta": {
+      "title": "LoraLoaderModelOnly"
+    }
+  },
+  "38": {
+    "inputs": {
+      "text": "low quality, blurry, haze, low contrast, overexposed, fade, moving perspective, extra limbs or hands, overlay pattern, double exposure, text, watermark, logo, typography",
+      "speak_and_recognation": {
+        "__value__": [
+          false,
+          true
+        ]
+      },
+      "clip": [
+        "28",
+        0
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode (Negative Prompt)"
+    }
+  },
+  "39": {
+    "inputs": {
+      "text": "오른쪽 두 사람이 함께 분식집에서 떡볶이를 먹고 있는 장면 시대 배경은 1980년대 대한민국 서울",
+      "speak_and_recognation": {
+        "__value__": [
+          false,
+          true
+        ]
+      },
+      "clip": [
+        "28",
+        0
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode (Positive Prompt)"
+    }
+  },
+  "40": {
+    "inputs": {
+      "unet_name": "wan2.2_i2v_low_noise_14B_fp8_scaled.safetensors",
+      "weight_dtype": "fp8_e4m3fn"
+    },
+    "class_type": "UNETLoader",
+    "_meta": {
+      "title": "Load Diffusion Model"
+    }
+  },
+  "41": {
+    "inputs": {
+      "add_noise": "enable",
+      "noise_seed": 1125014532703588,
+      "steps": 4,
+      "cfg": 1,
+      "sampler_name": "euler",
+      "scheduler": "simple",
+      "start_at_step": 0,
+      "end_at_step": 2,
+      "return_with_leftover_noise": "enable",
+      "model": [
+        "33",
+        0
+      ],
+      "positive": [
+        "45",
+        0
+      ],
+      "negative": [
+        "45",
+        1
+      ],
+      "latent_image": [
+        "45",
+        2
+      ]
+    },
+    "class_type": "KSamplerAdvanced",
+    "_meta": {
+      "title": "KSampler (Advanced)"
+    }
+  },
+  "42": {
+    "inputs": {
+      "unet_name": "wan2.2_i2v_low_noise_14B_fp8_scaled.safetensors",
+      "weight_dtype": "default"
+    },
+    "class_type": "UNETLoader",
+    "_meta": {
+      "title": "Load Diffusion Model"
+    }
+  },
+  "45": {
+    "inputs": {
+      "width": 1280,
+      "height": 720,
+      "length": 161,
+      "batch_size": 1,
+      "positive": [
+        "39",
+        0
+      ],
+      "negative": [
+        "38",
+        0
+      ],
+      "vae": [
+        "35",
+        0
+      ],
+      "start_image": [
+        "7",
+        0
+      ]
+    },
+    "class_type": "WanImageToVideo",
+    "_meta": {
+      "title": "WanImageToVideo"
+    }
+  },
+  "47": {
+    "inputs": {
+      "filename_prefix": "M2M/test02",
+      "format": "auto",
+      "codec": "auto",
+      "video-preview": "",
+      "video": [
+        "31",
+        0
+      ]
+    },
+    "class_type": "SaveVideo",
+    "_meta": {
+      "title": "Save Video"
+    }
+  }
+}

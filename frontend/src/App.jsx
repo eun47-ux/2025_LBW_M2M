@@ -114,6 +114,9 @@ export default function App() {
   const [scenesPreview, setScenesPreview] = useState(null);
   const [runAllLoading, setRunAllLoading] = useState(false);
   const [runAllResults, setRunAllResults] = useState(null);
+  const [concatLoading, setConcatLoading] = useState(false);
+  const [finalVideoPath, setFinalVideoPath] = useState("");
+  const [finalVideoUrl, setFinalVideoUrl] = useState("");
 
   // cleanup object urls
   useEffect(() => {
@@ -147,6 +150,9 @@ export default function App() {
     setScenesPreview(null);
     setRunAllLoading(false);
     setRunAllResults(null);
+    setConcatLoading(false);
+    setFinalVideoPath("");
+    setFinalVideoUrl("");
     setCrop({ x: 0, y: 0 });
     setZoom(1);
 
@@ -251,6 +257,8 @@ export default function App() {
     setSttPreview("");
     setScenesPreview(null);
     setRunAllResults(null);
+    setFinalVideoPath("");
+    setFinalVideoUrl("");
     alert(`업로드 성공! sessionId=${data.sessionId || sid}`);
 
     const finalSessionId = data.sessionId || sid;
@@ -388,6 +396,8 @@ export default function App() {
               setSttPreview(json.preview || "");
               setScenesPreview(null);
               setRunAllResults(null);
+              setFinalVideoPath("");
+              setFinalVideoUrl("");
               alert("STT 완료! transcript.txt 생성됨");
             }
           } catch (e) {
@@ -417,6 +427,8 @@ export default function App() {
             else {
               setScenesPreview(json.scenesPreviewFirst || null);
               setRunAllResults(null);
+              setFinalVideoPath("");
+              setFinalVideoUrl("");
               alert("Scenes 생성 완료! scenes.json 생성됨");
             }
           } catch (e) {
@@ -445,6 +457,8 @@ export default function App() {
             if (!json.ok) alert("이미지 생성 실패: " + (json.error || ""));
             else {
               setRunAllResults(json.results || []);
+              setFinalVideoPath("");
+              setFinalVideoUrl("");
               alert("이미지 생성 요청 완료!");
             }
           } catch (e) {
@@ -457,6 +471,37 @@ export default function App() {
         style={{ marginLeft: 10 }}
       >
         {runAllLoading ? "이미지 생성 중..." : "이미지 생성"}
+      </button>
+
+      <button
+        disabled={!sessionId || concatLoading || runAllLoading || scenesLoading || sttLoading || audioUploading}
+        onClick={async () => {
+          setConcatLoading(true);
+          try {
+            const res = await fetch(`http://localhost:3001/api/session/${sessionId}/concat-videos`, {
+              method: "POST",
+            });
+            const json = await res.json();
+            console.log("concat-videos:", json);
+
+            if (!json.ok) alert("영상 합치기 실패: " + (json.error || ""));
+            else {
+              setFinalVideoPath(json.finalPath || "");
+              setFinalVideoUrl(
+                json.finalPath ? `http://localhost:3001/sessions/${sessionId}/final.mp4` : ""
+              );
+              alert("영상 합치기 완료! final.mp4 생성됨");
+            }
+          } catch (e) {
+            console.error(e);
+            alert("영상 합치기 실패: " + (e?.message || String(e)));
+          } finally {
+            setConcatLoading(false);
+          }
+        }}
+        style={{ marginLeft: 10 }}
+      >
+        {concatLoading ? "영상 합치는 중..." : "영상 합치기"}
       </button>
 
       {!sessionId && (
@@ -508,6 +553,41 @@ export default function App() {
         >
 {JSON.stringify(runAllResults, null, 2)}
         </pre>
+      )}
+
+      {finalVideoPath && (
+        <>
+          <p style={{ marginTop: 8, fontSize: 12, color: "#555" }}>
+            ✅ final.mp4 생성됨: {finalVideoPath}
+          </p>
+          {finalVideoUrl && (
+            <>
+              <a
+                href={finalVideoUrl}
+                download="final.mp4"
+                style={{
+                  display: "inline-block",
+                  marginTop: 6,
+                  padding: "8px 12px",
+                  borderRadius: 10,
+                  border: "1px solid #ddd",
+                  background: "#fff",
+                  color: "#111",
+                  textDecoration: "none",
+                  fontSize: 12,
+                  fontWeight: 700,
+                }}
+              >
+                final.mp4 다운로드
+              </a>
+              <video
+                src={finalVideoUrl}
+                controls
+                style={{ marginTop: 8, width: "100%", maxWidth: 640, borderRadius: 12 }}
+              />
+            </>
+          )}
+        </>
       )}
 
       {/* Cropper */}

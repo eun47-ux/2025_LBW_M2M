@@ -12,6 +12,8 @@ import OpenAI from "openai";
 import { fileURLToPath } from "url";
 import { transcriptToScenes } from "./services/transcriptToScenes.js";
 import { runAllScenes } from "./scripts/runAllScenes.js";
+import { concatVideos } from "./services/concatVideos.js";
+import { downloadComfyFile, safeSceneFilename, waitForVideoOutput } from "./services/comfyVideo.js";
 
 
 
@@ -36,6 +38,7 @@ fs.mkdirSync(SESSIONS_DIR, { recursive: true });
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use("/sessions", express.static(SESSIONS_DIR));
 
 // multer temp upload
 const upload = multer({ dest: "tmp/" });
@@ -391,6 +394,83 @@ app.post("/api/session/:sessionId/run-all-scenes", async (req, res) => {
     return res.status(500).json({
       ok: false,
       error: "run-all-scenes failed",
+      detail: e?.message || String(e),
+    });
+  }
+});
+
+/**
+ * ✅ Comfy mp4 다운로드 + final.mp4 합치기
+ * POST /api/session/:sessionId/concat-videos
+ */
+app.post("/api/session/:sessionId/concat-videos", async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    const sessionPath = path.join(SESSIONS_DIR, sessionId);
+    if (!fs.existsSync(sessionPath)) {
+      return res.status(404).json({ ok: false, error: "Session folder not found", sessionPath });
+    }
+
+    const resultsPath = path.join(sessionPath, "comfy_results.json");
+    if (!fs.existsSync(resultsPath)) {
+      return res.status(400).json({ ok: false, error: "comfy_results.json not found" });
+    }
+
+    const results = JSON.parse(fs.readFileSync(resultsPath, "utf-8"));
+    if (!Array.isArray(results) || results.length === 0) {
+      return res.status(400).json({ ok: false, error: "No results in comfy_results.json" });
+    }
+
+    const videosDir = path.join(sessionPath, "videos");
+    fs.mkdirSync(videosDir, { recursive: true });
+
+    const downloaded = [];
+    for (const item of results) {
+      const promptId = item.prompt_id;
+      if (!promptId) continue;
+
+      const videos = await waitForVideoOutput(COMFY, promptId, 300000);
+      if (!videos.length) {
+        return res.status(500).json({
+          ok: false,
+          error: "No video output found for prompt",
+          promptId,
+        });
+      }
+
+      const videoInfo = videos[0];
+      const filename = safeSceneFilename(item.scene_id, promptId);
+      const localPath = path.join(videosDir, filename);
+      await downloadComfyFile(COMFY, videoInfo, localPath);
+
+      downloaded.push({
+        scene_id: item.scene_id,
+        prompt_id: promptId,
+        filename,
+        path: localPath,
+        source: videoInfo,
+      });
+    }
+
+    const finalPath = path.join(sessionPath, "final.mp4");
+    await concatVideos(
+      downloaded.map((d) => d.path),
+      finalPath
+    );
+
+    return res.json({
+      ok: true,
+      sessionId,
+      videosDir,
+      finalPath,
+      count: downloaded.length,
+      videos: downloaded,
+    });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({
+      ok: false,
+      error: "concat-videos failed",
       detail: e?.message || String(e),
     });
   }
