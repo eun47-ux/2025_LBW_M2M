@@ -2,9 +2,9 @@
 import fs from "fs";
 import path from "path";
 import { spawn } from "child_process";
-import { SESSIONS_DIR, PYTHON_SCRIPT_PATH, COMFY_URL, COMFY_API_KEY } from "../config.js";
+import axios from "axios";
+import { SESSIONS_DIR, PYTHON_SCRIPT_PATH, COMFY_URL, COMFY_API_KEY, COMFY_STATIC_BASE } from "../config.js";
 import { waitForImageOutput, downloadComfyFile, downloadComfyStaticFile } from "./comfyVideo.js";
-import { COMFY_STATIC_BASE } from "../config.js";
 
 function loadJson(p) {
   return JSON.parse(fs.readFileSync(p, "utf-8"));
@@ -188,20 +188,53 @@ export async function runImageScenes(sessionId) {
         throw new Error(`Python image run missing prompt_id for scene ${item.scene_id}`);
       }
 
-      // ComfyUI 결과 대기
-      const images = await waitForImageOutput(COMFY_URL, imagePromptId, 300000);
-      if (!images.length) {
-        throw new Error(`No image output for scene ${item.scene_id} (prompt ${imagePromptId})`);
-      }
+      // 이미지가 생성될 때까지 대기 (약간의 지연)
+      await new Promise((r) => setTimeout(r, 5000));
 
-      // 이미지 다운로드
-      const imageInfo = images[0];
       const localImagePath = path.join(imagesDir, `${item.scene_id}.png`);
 
-      if (COMFY_STATIC_BASE) {
-        await downloadComfyStaticFile(COMFY_STATIC_BASE, imageInfo, localImagePath);
-      } else {
-        await downloadComfyFile(COMFY_URL, imageInfo, localImagePath);
+      // M2M/${sessionId}/images/ 폴더에서 scene_id로 시작하는 파일 찾기
+      if (!COMFY_STATIC_BASE) {
+        throw new Error("COMFY_STATIC_BASE가 설정되지 않았습니다");
+      }
+
+      const imagesBaseUrl = `${COMFY_STATIC_BASE}/M2M/${sessionId}/images/`;
+      
+      // 여러 가능한 파일명 패턴 시도
+      const possibleFilenames = [
+        `${item.scene_id}_00001_.png`,
+        `${item.scene_id}_00001.png`,
+        `${item.scene_id}.png`,
+      ];
+
+      let downloaded = false;
+      for (const filename of possibleFilenames) {
+        const url = `${imagesBaseUrl}${filename}`;
+        
+        try {
+          console.log(`[DEBUG] 이미지 다운로드 시도: ${url}`);
+          const res = await axios.get(url, { responseType: "stream", timeout: 120000 });
+          await new Promise((resolve, reject) => {
+            const out = fs.createWriteStream(localImagePath);
+            res.data.pipe(out);
+            out.on("finish", resolve);
+            out.on("error", reject);
+          });
+          console.log(`[DEBUG] 이미지 다운로드 성공: ${url} → ${localImagePath}`);
+          downloaded = true;
+          break;
+        } catch (directErr) {
+          if (directErr.response?.status === 404) {
+            console.log(`[DEBUG] 파일 없음: ${filename}`);
+            continue; // 다음 파일명 시도
+          }
+          console.error(`[DEBUG] 다운로드 에러: ${filename}`, directErr.message);
+          throw directErr; // 다른 에러는 재throw
+        }
+      }
+
+      if (!downloaded) {
+        throw new Error(`이미지를 찾을 수 없습니다. 시도한 패턴: ${possibleFilenames.join(", ")}`);
       }
 
       results.push({

@@ -610,6 +610,84 @@ export default function App() {
         </div>
       </div>
 
+      {/* 디버깅: P1 세션 이미지 다운로드 + 비디오 생성 테스트 */}
+      <div style={{ marginTop: 24, padding: 16, background: "#fff3cd", borderRadius: 12, border: "2px solid #ffc107" }}>
+        <h3 style={{ margin: "0 0 12px 0", fontSize: 16, color: "#856404" }}>🔧 디버깅: P1 세션 이미지 다운로드 + 비디오 생성 테스트</h3>
+        <button
+          disabled={runImagesLoading || runVideosLoading}
+          onClick={async () => {
+            const testSessionId = "P1";
+            
+            // 1단계: 이미지 다운로드
+            setRunImagesLoading(true);
+            try {
+              console.log("[DEBUG] 이미지 다운로드 시작...");
+              const imageRes = await fetch(`http://localhost:3001/api/session/${testSessionId}/run-images`, {
+                method: "POST",
+              });
+              const imageJson = await imageRes.json();
+              console.log("디버깅 - run-images:", imageJson);
+
+              if (!imageJson.ok) {
+                alert("이미지 다운로드 실패: " + (imageJson.error || ""));
+                setRunImagesLoading(false);
+                return;
+              }
+              
+              setRunImagesResults(imageJson.results || []);
+              alert(`이미지 다운로드 완료! (${imageJson.resultsCount || 0}개)`);
+            } catch (e) {
+              console.error(e);
+              alert("이미지 다운로드 실패: " + (e?.message || String(e)));
+              setRunImagesLoading(false);
+              return;
+            } finally {
+              setRunImagesLoading(false);
+            }
+
+            // 2단계: 비디오 생성
+            setRunVideosLoading(true);
+            try {
+              console.log("[DEBUG] 비디오 생성 시작...");
+              const videoRes = await fetch(`http://localhost:3001/api/session/${testSessionId}/run-videos`, {
+                method: "POST",
+              });
+              const videoJson = await videoRes.json();
+              console.log("디버깅 - run-videos:", videoJson);
+
+              if (!videoJson.ok) {
+                alert("비디오 생성 실패: " + (videoJson.error || ""));
+              } else {
+                setRunVideosResults(videoJson.results || []);
+                setFinalVideoPath("");
+                setFinalVideoUrl("");
+                alert(`비디오 생성 완료! (${videoJson.resultsCount || 0}개)`);
+              }
+            } catch (e) {
+              console.error(e);
+              alert("비디오 생성 실패: " + (e?.message || String(e)));
+            } finally {
+              setRunVideosLoading(false);
+            }
+          }}
+          style={{
+            padding: "10px 20px",
+            borderRadius: 10,
+            border: "1px solid #ffc107",
+            background: "#ffc107",
+            color: "#000",
+            fontWeight: "bold",
+            cursor: runImagesLoading || runVideosLoading ? "not-allowed" : "pointer",
+          }}
+        >
+          {runImagesLoading
+            ? "이미지 다운로드 중..."
+            : runVideosLoading
+            ? "비디오 생성 중..."
+            : "P1 이미지 다운로드 + 비디오 생성 테스트"}
+        </button>
+      </div>
+
       <button
         disabled={!sessionId || concatLoading || runVideosLoading || scenesLoading || sttLoading || audioUploading}
         onClick={async () => {

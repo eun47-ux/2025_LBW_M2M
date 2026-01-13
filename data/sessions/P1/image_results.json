@@ -6,7 +6,8 @@
       "1"
     ],
     "prompt_text": "1990년대 한국 친구와 함께 용문산 계곡 근처에서 시예버스를 타고 계곡 근처에 자리를 잡고 있다.",
-    "error": "Request failed with status code 404"
+    "image_prompt_id": "e0ca1de8-f162-43a1-a979-eb4a5214d82a",
+    "image_path": "D:\\2025_LBW_M2M\\data\\sessions\\P1\\images\\21_01.png"
   },
   {
     "scene_id": "21_02",
@@ -15,7 +16,8 @@
       "1"
     ],
     "prompt_text": "1990년대 한국 친구와 함께 학교 주변 노래방에서 노래를 부르며 노래 연습을 하고 있다.",
-    "error": "Request failed with status code 404"
+    "image_prompt_id": "64128d4b-c855-4108-9fb1-be6a843d4445",
+    "image_path": "D:\\2025_LBW_M2M\\data\\sessions\\P1\\images\\21_02.png"
   },
   {
     "scene_id": "23_01",
@@ -24,7 +26,8 @@
       "3"
     ],
     "prompt_text": "1990년대 한국 친구와 함께 500명 하우스에서 쫄면과 떡볶이, 김밥을 먹고 있다.",
-    "error": "Request failed with status code 404"
+    "image_prompt_id": "1cf4e2e8-efb0-4416-b1e0-4e49fc91ace8",
+    "image_path": "D:\\2025_LBW_M2M\\data\\sessions\\P1\\images\\23_01.png"
   },
   {
     "scene_id": "23_02",
@@ -33,7 +36,8 @@
       "3"
     ],
     "prompt_text": "1990년대 한국 친구와 함께 현대백화점 지하에서 밥을 먹고 쇼핑을 구경하고 있다.",
-    "error": "Request failed with status code 404"
+    "image_prompt_id": "8ed86284-5409-4231-bf57-def1dace6ca1",
+    "image_path": "D:\\2025_LBW_M2M\\data\\sessions\\P1\\images\\23_02.png"
   },
   {
     "scene_id": "24_01",
@@ -42,7 +46,8 @@
       "4"
     ],
     "prompt_text": "1990년대 한국 친구와 함께 압구정에서 부대찌개를 먹고 있다.",
-    "error": "Request failed with status code 404"
+    "image_prompt_id": "41c3ea8d-198b-4316-adfa-ece69a3f49c2",
+    "image_path": "D:\\2025_LBW_M2M\\data\\sessions\\P1\\images\\24_01.png"
   },
   {
     "scene_id": "24_02",
@@ -51,6 +56,7 @@
       "4"
     ],
     "prompt_text": "1990년대 한국 친구와 함께 카페에서 담배를 피우는 사람들 사이에서 있다.",
-    "error": "Request failed with status code 404"
+    "image_prompt_id": "bbb83484-bd81-486a-8d6f-107b3a71738d",
+    "image_path": "D:\\2025_LBW_M2M\\data\\sessions\\P1\\images\\24_02.png"
   }
 ]

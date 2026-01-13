@@ -89,8 +89,28 @@ export async function runVideoScenes(sessionId) {
     try {
       // 이미지 경로 찾기
       const imageResult = imageByScene.get(String(item.scene_id));
-      const imagePath =
-        imageResult?.image_path || path.join(sessionDir, "images", `${item.scene_id}.png`);
+      let imagePath = imageResult?.image_path;
+      
+      if (!imagePath || !fs.existsSync(imagePath)) {
+        // image_results.json에 경로가 없거나 파일이 없으면
+        // images 폴더에서 scene_id로 시작하는 파일 찾기
+        const imagesDir = path.join(sessionDir, "images");
+        if (fs.existsSync(imagesDir)) {
+          const files = fs.readdirSync(imagesDir);
+          const matchingFile = files.find(f => 
+            f.startsWith(`${item.scene_id}_`) || f.startsWith(`${item.scene_id}.`)
+          );
+          if (matchingFile) {
+            imagePath = path.join(imagesDir, matchingFile);
+          }
+        }
+      }
+      
+      if (!imagePath || !fs.existsSync(imagePath)) {
+        // 여전히 없으면 기본 경로 시도
+        imagePath = path.join(sessionDir, "images", `${item.scene_id}.png`);
+      }
+      
       if (!fs.existsSync(imagePath)) {
         throw new Error(`image not found: ${imagePath}`);
       }

@@ -115,18 +115,34 @@ function joinUrl(base, subpath) {
 export async function downloadComfyStaticFile(comfyStaticBase, fileInfo, destPath) {
   const subfolder = (fileInfo.subfolder || "").replace(/\\/g, "/").replace(/^\/+|\/+$/g, "");
   const filename = (fileInfo.filename || "").replace(/\\/g, "/");
-  const relPath = [subfolder, filename].filter(Boolean).join("/");
+  
+  // subfolder와 filename을 조합 (output 제거, 이미 포함되어 있을 수 있음)
+  let relPath;
+  if (subfolder) {
+    // subfolder에 output이 포함되어 있으면 제거
+    const cleanSubfolder = subfolder.replace(/^output\//, "");
+    relPath = [cleanSubfolder, filename].filter(Boolean).join("/");
+  } else {
+    relPath = filename;
+  }
+  
   const url = joinUrl(comfyStaticBase, relPath);
+  console.log(`[DEBUG] 다운로드 시도: ${url} (subfolder: "${subfolder}", filename: "${filename}")`);
 
-  const res = await axios.get(url, { responseType: "stream", timeout: 120000 });
-  await new Promise((resolve, reject) => {
-    const out = fs.createWriteStream(destPath);
-    res.data.pipe(out);
-    out.on("finish", resolve);
-    out.on("error", reject);
-  });
-
-  return destPath;
+  try {
+    const res = await axios.get(url, { responseType: "stream", timeout: 120000 });
+    await new Promise((resolve, reject) => {
+      const out = fs.createWriteStream(destPath);
+      res.data.pipe(out);
+      out.on("finish", resolve);
+      out.on("error", reject);
+    });
+    console.log(`[DEBUG] 다운로드 성공: ${destPath}`);
+    return destPath;
+  } catch (err) {
+    console.error(`[DEBUG] 다운로드 실패: ${url}`, err.message);
+    throw err;
+  }
 }
 
 export function safeSceneFilename(sceneId, fallback) {
