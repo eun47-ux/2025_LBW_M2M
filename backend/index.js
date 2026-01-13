@@ -11,7 +11,7 @@ import sharp from "sharp";
 import OpenAI from "openai";
 import { fileURLToPath } from "url";
 import { transcriptToScenes } from "./services/transcriptToScenes.js";
-import { runAllScenes } from "./scripts/runAllScenes.js";
+import { runAllScenes, runImageScenes, runVideoScenes } from "./scripts/runAllScenes.js";
 import { concatVideos } from "./services/concatVideos.js";
 import { downloadComfyFile, safeSceneFilename, waitForVideoOutput } from "./services/comfyVideo.js";
 
@@ -42,8 +42,11 @@ app.use("/sessions", express.static(SESSIONS_DIR));
 
 // multer temp upload
 const upload = multer({ dest: "tmp/" });
-// 오디오용: 메모리로 받아서 우리가 원하는 경로로 저장
-const uploadMem = multer({ storage: multer.memoryStorage() });
+// 오디오용: 파일이 커질 수 있으니 디스크로 받기
+const uploadAudio = multer({
+  dest: "tmp/",
+  limits: { fileSize: 300 * 1024 * 1024 }, // 300MB
+});
 
 
 // ===============================
@@ -136,7 +139,7 @@ app.get("/api/health", (req, res) => {
  */
 app.post(
   "/api/session/:sessionId/upload-audio",
-  uploadMem.single("audio"),
+  uploadAudio.single("audio"),
   async (req, res) => {
     try {
       const { sessionId } = req.params;
@@ -163,8 +166,13 @@ app.post(
       const ext = path.extname(original) || ".wav"; // 못 얻으면 wav로
       const outPath = path.join(audioDir, `recording${ext}`);
 
-      // 저장
-      fs.writeFileSync(outPath, req.file.buffer);
+      // 저장 (tmp → session/audio)
+      try {
+        fs.renameSync(req.file.path, outPath);
+      } catch {
+        fs.copyFileSync(req.file.path, outPath);
+        fs.unlinkSync(req.file.path);
+      }
 
       // session.json에 오디오 경로 기록(선택)
       const sessionJsonPath = path.join(sessionPath, "session.json");
@@ -201,6 +209,17 @@ app.post(
     }
   }
 );
+app.use((err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    return res.status(400).json({
+      ok: false,
+      error: "upload failed",
+      detail: err.message,
+      code: err.code,
+    });
+  }
+  return next(err);
+});
 
 /**
  * ✅ STT 실행: 세션 audio/recording.* → transcript.txt 생성
@@ -400,6 +419,56 @@ app.post("/api/session/:sessionId/run-all-scenes", async (req, res) => {
 });
 
 /**
+ * ✅ 이미지 생성만 실행 (m2m_image)
+ * POST /api/session/:sessionId/run-images
+ */
+app.post("/api/session/:sessionId/run-images", async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    const out = await runImageScenes(sessionId);
+    return res.json({
+      ok: true,
+      sessionId,
+      resultsPath: out.outPath,
+      resultsCount: out.results.length,
+      results: out.results,
+    });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({
+      ok: false,
+      error: "run-images failed",
+      detail: e?.message || String(e),
+    });
+  }
+});
+
+/**
+ * ✅ 영상 생성만 실행 (m2m_video)
+ * POST /api/session/:sessionId/run-videos
+ */
+app.post("/api/session/:sessionId/run-videos", async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    const out = await runVideoScenes(sessionId);
+    return res.json({
+      ok: true,
+      sessionId,
+      resultsPath: out.outPath,
+      resultsCount: out.results.length,
+      results: out.results,
+    });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({
+      ok: false,
+      error: "run-videos failed",
+      detail: e?.message || String(e),
+    });
+  }
+});
+
+/**
  * ✅ Comfy mp4 다운로드 + final.mp4 합치기
  * POST /api/session/:sessionId/concat-videos
  */
@@ -426,7 +495,7 @@ app.post("/api/session/:sessionId/concat-videos", async (req, res) => {
 
     const downloaded = [];
     for (const item of results) {
-      const promptId = item.prompt_id;
+      const promptId = item.video_prompt_id || item.prompt_id;
       if (!promptId) continue;
 
       const videos = await waitForVideoOutput(COMFY, promptId, 300000);

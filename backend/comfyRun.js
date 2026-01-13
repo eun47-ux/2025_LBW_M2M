@@ -1,6 +1,7 @@
 // backend/comfyRun.js
 import fs from "fs";
 import axios from "axios";
+import FormData from "form-data";
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -67,6 +68,86 @@ export function patchWorkflow({ workflowTemplate, ownerFilename, partnerFilename
     if (wf[positiveId]?.inputs) {
       wf[positiveId].inputs.text = promptText;
     }
+  }
+
+  return wf;
+}
+
+export function uploadImageToComfy(localPath, filename) {
+  const form = new FormData();
+  form.append("image", fs.createReadStream(localPath), filename);
+  form.append("overwrite", "true");
+
+  return axios
+    .post(`${COMFY}/upload/image`, form, {
+      headers: form.getHeaders(),
+      maxBodyLength: Infinity,
+    })
+    .then((res) => {
+      const data = res.data || {};
+      if (data.subfolder && data.subfolder.length > 0) {
+        return `${data.subfolder}/${data.name}`;
+      }
+      return data.name || filename;
+    });
+}
+
+export function patchImageWorkflow({
+  workflowTemplate,
+  ownerFilename,
+  partnerFilename,
+  promptText,
+  filenamePrefix,
+}) {
+  const wf = JSON.parse(JSON.stringify(workflowTemplate));
+
+  const loadIds = Object.keys(wf)
+    .filter((id) => wf[id]?.class_type === "LoadImage")
+    .sort((a, b) => Number(a) - Number(b));
+  if (loadIds.length < 2) {
+    throw new Error(`Need at least 2 LoadImage nodes. Found: ${loadIds.length}`);
+  }
+  wf[loadIds[0]].inputs.image = ownerFilename;
+  wf[loadIds[1]].inputs.image = partnerFilename;
+
+  const geminiId = Object.keys(wf).find((id) => wf[id]?.class_type === "GeminiImageNode");
+  if (!geminiId) throw new Error("GeminiImageNode not found in image workflow");
+  wf[geminiId].inputs.prompt = promptText;
+
+  const saveImageId = Object.keys(wf).find((id) => wf[id]?.class_type === "SaveImage");
+  if (saveImageId && filenamePrefix) {
+    wf[saveImageId].inputs.filename_prefix = filenamePrefix;
+  }
+
+  return wf;
+}
+
+export function patchVideoWorkflow({ workflowTemplate, inputFilename, promptText, filenamePrefix }) {
+  const wf = JSON.parse(JSON.stringify(workflowTemplate));
+
+  const loadIds = Object.keys(wf)
+    .filter((id) => wf[id]?.class_type === "LoadImage")
+    .sort((a, b) => Number(a) - Number(b));
+  if (!loadIds.length) {
+    throw new Error("LoadImage node not found in video workflow");
+  }
+  wf[loadIds[0]].inputs.image = inputFilename;
+
+  const clipIds = Object.keys(wf).filter((id) => wf[id]?.class_type === "CLIPTextEncode");
+  if (clipIds.length) {
+    const positiveId =
+      clipIds.find((id) => /positive/i.test(wf[id]?._meta?.title || "")) ||
+      clipIds.find((id) => {
+        const text = wf[id]?.inputs?.text || "";
+        return text && !/low quality|blurry|negative/i.test(text.toLowerCase());
+      }) ||
+      clipIds[0];
+    wf[positiveId].inputs.text = promptText;
+  }
+
+  const saveVideoId = Object.keys(wf).find((id) => wf[id]?.class_type === "SaveVideo");
+  if (saveVideoId && filenamePrefix) {
+    wf[saveVideoId].inputs.filename_prefix = filenamePrefix;
   }
 
   return wf;

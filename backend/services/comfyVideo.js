@@ -7,6 +7,10 @@ function isVideoFile(name) {
   return /\.(mp4|webm|mov|mkv)$/i.test(name || "");
 }
 
+function isImageFile(name) {
+  return /\.(png|jpg|jpeg|webp)$/i.test(name || "");
+}
+
 export function extractVideoFiles(historyItem) {
   const outputs = historyItem?.outputs || {};
   const videos = [];
@@ -32,6 +36,30 @@ export function extractVideoFiles(historyItem) {
   return videos;
 }
 
+export function extractImageFiles(historyItem) {
+  const outputs = historyItem?.outputs || {};
+  const images = [];
+
+  for (const nodeOutput of Object.values(outputs)) {
+    if (!nodeOutput || typeof nodeOutput !== "object") continue;
+    const pools = [
+      ...(Array.isArray(nodeOutput.images) ? nodeOutput.images : []),
+      ...(Array.isArray(nodeOutput.gifs) ? nodeOutput.gifs : []),
+    ];
+    for (const item of pools) {
+      if (item?.filename && isImageFile(item.filename)) {
+        images.push({
+          filename: item.filename,
+          subfolder: item.subfolder || "",
+          type: item.type || "output",
+        });
+      }
+    }
+  }
+
+  return images;
+}
+
 export async function fetchPromptHistory(comfyBase, promptId) {
   const res = await axios.get(`${comfyBase}/history/${promptId}`, { timeout: 120000 });
   return res.data?.[promptId] || null;
@@ -43,6 +71,17 @@ export async function waitForVideoOutput(comfyBase, promptId, timeoutMs = 300000
     const history = await fetchPromptHistory(comfyBase, promptId);
     const videos = extractVideoFiles(history);
     if (videos.length) return videos;
+    await new Promise((r) => setTimeout(r, 2000));
+  }
+  return [];
+}
+
+export async function waitForImageOutput(comfyBase, promptId, timeoutMs = 300000) {
+  const started = Date.now();
+  while (Date.now() - started < timeoutMs) {
+    const history = await fetchPromptHistory(comfyBase, promptId);
+    const images = extractImageFiles(history);
+    if (images.length) return images;
     await new Promise((r) => setTimeout(r, 2000));
   }
   return [];

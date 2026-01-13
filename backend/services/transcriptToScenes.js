@@ -7,6 +7,8 @@ import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// NOTE: your .env is expected at backend/.env (one level up from /services)
 dotenv.config({ path: path.resolve(__dirname, "..", ".env") });
 
 console.log("ENV CHECK:", process.env.OPENAI_API_KEY?.slice(0, 7));
@@ -21,19 +23,20 @@ const openai = new OpenAI({
  * Transcript convention (expected in transcript):
  * - People labels are listed in `participants` (e.g., ["A","B","C"] or ["1","2","3"])
  * - The transcript declares which label is the photo owner
- * - The transcript contains an explicit era/background phrase (mandatory in prompts),
- *   otherwise we will use UNKNOWN_ERA_BACKGROUND.
+ * - The transcript contains an explicit time-period phrase (e.g., "1980년대")  ✅ (TIME MUST exist)
+ * - Country may be missing; default to "한국"
  *
  * Output:
  * - Flat "scenes": [ ... ]
- * - Each scene: { scene_id, pair, evidence_quotes, scene_text, do_not_include }
+ * - Each scene: { scene_id, pair, evidence_quotes, scene_text }
  *
  * Critical constraints (enforced):
  * - Generate scenes ONLY for owner+other pairs
- * - For EACH pair, we aim for 2 scenes, BUT:
- *   - If evidence_quotes is empty, DO NOT include that scene in final output (do not send to ComfyUI)
- * - scene_text MUST include era phrase (e.g., "1980년대 대한민국 서울") always
+ * - For EACH pair, LLM must output EXACTLY 2 scenes (prompt-enforced)
+ * - If evidence_quotes is empty OR action is missing, we drop that scene (do not send to ComfyUI)
+ * - scene_text must be an IMAGE-GEN SCENE PROMPT (location + activity + optional mood if explicit)
  * - scene_text must NOT contain pair labels (A/B/1/2 etc.)
+ * - scene_text should follow: "<TIME> <COUNTRY> 친구와 함께 ...하고 있다."
  */
 export async function transcriptToScenes({
   transcript,
@@ -59,60 +62,62 @@ export async function transcriptToScenes({
   }
 
   const systemPrompt = `
-You are a strict, literal information extractor that converts a transcript into scene prompts for downstream image/video generation.
+You are a strict transcript-to-scenes extractor for IMAGE GENERATION prompts.
 
-ABSOLUTE RULES (must follow):
-- Do NOT interpret the conversation.
-- Do NOT infer emotions, relationships, intentions, or unstated context.
-- Do NOT add visual details (clothing, weather, facial expression, vibe, camera/style keywords, etc.) unless explicitly stated.
-- Extract ONLY what is explicitly mentioned in the transcript.
-- If a required piece of information is missing, do NOT invent; omit that scene.
+ABSOLUTE RULES:
+- Do NOT interpret or infer unstated details.
+- Do NOT add cinematic/style keywords (no "cinematic", "vintage", "high quality", etc.).
+- Use ONLY what is explicitly stated in the transcript.
+- Every scene MUST include 1–3 verbatim evidence quotes.
+- Never use participant labels (A/B/1/2 etc.) in scene_text.
 
-PEOPLE LABELS + OWNER:
-- People are labeled in the transcript and provided via the "participants" list.
-- The transcript declares which label is the photo owner.
-- Use these labels as canonical IDs in the output "pair" field only.
+TIME + COUNTRY PREFIX:
+- Extract a time-period phrase that is explicitly stated in the transcript (e.g., "1980년대", "1990년대").
+- TIME MUST exist in the transcript.
+- Country: if explicitly stated, use it; otherwise use "한국".
+- Prefix must be: "<TIME> <COUNTRY>" (no extra punctuation).
+- Do NOT include city/region/place in the prefix.
 
-PAIRING RULE:
-- Generate scenes ONLY for pairs that include the owner: (owner + every other person).
+PAIRING + COUNT:
+- Generate scenes ONLY for (owner + each other participant).
+- For EACH pair, output EXACTLY 2 scenes.
+- Distribute activities across pairs to minimize duplication:
+  - Do NOT reuse the same activity across pairs until all distinct activities are used at least once.
+  - Within a pair, the two scenes must be different.
+  - If activities are insufficient, split broad activities into explicit sub-activities mentioned (떡볶이/팥빙수/돈까스, 명동/이대, 사진 찍기/구경하기 등).
 
-SCENE ELIGIBILITY (strict):
-A scene is eligible ONLY if BOTH are explicitly stated:
-1) an action/activity ("what they did")
-2) a location/place ("where it happened")
-If either is missing, the scene is NOT eligible and must be omitted.
+PLACE:
+- "place" may be a region OR a concrete place type (공원, 떡볶이집, 카페, 길거리, 옷가게 등).
+- Use only what is explicitly stated; if none, use "UNKNOWN_PLACE".
+- If the transcript is uncertain (e.g., "한림공원인가 한림농원인가"), keep that uncertainty literally.
 
-ERA BACKGROUND (mandatory, must be included in scene_text):
-- Identify the era/background phrase explicitly stated in the transcript.
-- Use the exact phrase as written in the transcript.
-- Do NOT invent the era. If not explicitly present, use "UNKNOWN_ERA_BACKGROUND".
-- Every "scene_text" MUST include the era/background phrase verbatim.
+CRITICAL: scene_text MUST be a SCENE DESCRIPTION (NOT a summary)
+- scene_text is an image-generation prompt that must be visually scene-able.
+- It must include:
+  1) location/background (where) if available
+  2) activity/action (what they are doing)
+  3) mood/feeling ONLY if explicitly stated; otherwise omit mood.
+- scene_text must NOT be abstract like "성차별에 대해 이야기하고 있다".
+  Instead it must be grounded in an activity + setting, e.g.:
+  "1990년대 한국 친구와 함께 떡볶이집에서 떡볶이를 먹으며 성차별 이야기를 나누고 있다."
+- Prefer concrete present progressive verbs: 먹고 있다 / 걷고 있다 / 산책하고 있다 / 구경하고 있다 / 사진을 찍고 있다 / 공유하고 있다
+- If including conversation content, attach it to an activity (e.g., "떡볶이를 먹으며 ~ 이야기를 나누고 있다").
 
-scene_text content rules:
-- scene_text must be ONE literal sentence.
-- scene_text must NOT mention any pair labels (no "A와 B", no "1과 2", no "pair:", etc.)
-- scene_text must only describe action + place (and other explicitly stated details).
-- scene_text must always include the era/background phrase.
-
-EVIDENCE QUOTES (critical):
-- Every scene MUST include 1-3 exact quotes (verbatim) supporting that scene.
-- If you cannot provide at least 1 exact supporting quote for a scene, omit that scene.
-
-GROUP REUSE EXCEPTION RULE:
-- If the transcript explicitly states that the OWNER did something "with friends", "with everyone", "together", or equivalent group expression,
-  and the owner is clearly included,
-  you MAY reuse the same eligible scene for each owner+other-person pair.
-- Do NOT apply group reuse if action/place is missing or membership is unclear.
-- Mark reused scenes with: "source_scope": "GROUP_REUSED"
-- Pair-specific scenes are: "PAIR_EXPLICIT"
-
-PER-PAIR TARGET:
-- Try to produce up to 2 scenes per owner+other pair.
-- If fewer than 2 eligible scenes exist for a pair, output fewer (do not invent).
+SCENE_TEXT FORMAT (must follow):
+- ONE Korean sentence.
+- Present progressive.
+- Must follow:
+  "<TIME> <COUNTRY> 친구와 함께 <PLACE_PHRASE><ACTIVITY_PHRASE><MOOD_PHRASE>."
+  where:
+  - <PLACE_PHRASE>:
+     - if place known: "<PLACE>에서 " (or "<PLACE> 근처에서 ")
+     - if UNKNOWN_PLACE: "" (empty)
+  - <ACTIVITY_PHRASE>: concrete action in present progressive
+  - <MOOD_PHRASE>: only if explicitly stated; keep it short
 
 OUTPUT:
-- Output MUST be valid JSON only (no markdown, no extra text).
-- Follow the provided JSON schema exactly.
+- Output valid JSON only.
+- Follow the schema exactly.
 `.trim();
 
   const userPrompt = `
@@ -121,46 +126,51 @@ Conversation transcript:
 ${transcript}
 ---
 
-Participants (labels): ${JSON.stringify(normalizedParticipants)}
+Participants: ${JSON.stringify(normalizedParticipants)}
 Owner label: "${owner}"
 
-Your task:
-1) Identify the era/background phrase explicitly stated in the transcript and set "era_background".
-   If not found, set "era_background" to "UNKNOWN_ERA_BACKGROUND".
-2) Create owner-only pairs: for owner "${owner}", pairs (owner + each other participant).
-3) For each pair:
-   - Extract eligible scenes only when BOTH action and place are explicitly stated.
-   - Every scene MUST have 1-3 exact evidence quotes; otherwise omit it.
-   - If pair-specific evidence exists, mark "source_scope": "PAIR_EXPLICIT".
-   - If only group evidence exists (owner "with friends/everyone/together"), you MAY reuse it across pairs and mark "source_scope": "GROUP_REUSED".
-4) For each pair, output up to 2 scenes (choose the 2 most specific if more exist).
-5) For each scene, produce "scene_text" that:
-   - MUST include the era/background phrase verbatim
-   - MUST be a single literal sentence describing action+place
-   - MUST NOT contain any pair labels (no "A", "B", "1", "2", "pair:", etc.)
-   Example (good):
-   "1980년대 대한민국 서울. 하교 후 분식집에서 떡볶이를 먹고 있다."
+TASK (follow steps in order):
 
-Hard constraints:
-- Do NOT interpret or infer beyond the transcript.
-- Do NOT add style keywords.
-- Output valid JSON only.
+Step 1) Extract TIME and COUNTRY:
+- TIME: extract the exact time-period phrase present in the transcript (e.g., "1980년대"). TIME MUST exist.
+- COUNTRY: extract if explicitly stated; otherwise set to "한국".
 
-JSON schema (MUST match exactly):
+Step 2) Build an ACTIVITY BANK:
+- Extract distinct activities mentioned in the transcript.
+- If a broad activity lists explicit items, split into explicit sub-activities
+  (e.g., 떡볶이 / 팥빙수 / 돈까스; 명동 쇼핑 / 이대 쇼핑; 사진 찍기 / 구경하기).
+- Each activity/sub-activity must include:
+  - action (concrete)
+  - place (explicit, or UNKNOWN_PLACE)
+  - evidence_quotes (1–3 verbatim quotes)
+
+Step 3) Create owner-only pairs: (owner + each other participant).
+
+Step 4) Assign EXACTLY 2 scenes per pair with minimum duplication:
+- Distribute activities so different pairs get different activities first.
+- Within the same pair, the two scenes must be different.
+
+Step 5) Write scene_text as an image generation prompt:
+- Must be ONE Korean sentence, present progressive.
+- Must start with "<TIME> <COUNTRY> 친구와 함께 "
+- If place is known: include "<PLACE>에서 "
+- If place is UNKNOWN_PLACE: do not mention a place
+- Must include action/activity (and attach conversation content only if it helps scene-ability)
+- Mood only if explicitly stated
+
+OUTPUT JSON schema (MUST match exactly):
 {
   "owner_label": "${owner}",
-  "era_background": "string",
   "pairs": [
     {
       "pair": ["${owner}", "X"],
       "scenes": [
         {
-          "source_scope": "PAIR_EXPLICIT or GROUP_REUSED",
+          "source_scope": "PAIR_EXPLICIT or GROUP_ACTIVITY",
           "evidence_quotes": ["exact quote 1", "exact quote 2"],
           "action": "string",
           "place": "string",
-          "scene_text": "<era_background> + one literal sentence (no pair labels)",
-          "do_not_include": ["assumptions", "invented emotions"]
+          "scene_text": "string"
         }
       ]
     }
@@ -196,12 +206,6 @@ JSON schema (MUST match exactly):
   // enforce owner_label
   parsed.owner_label = owner;
 
-  // ensure era_background
-  if (!parsed.era_background || typeof parsed.era_background !== "string") {
-    parsed.era_background = "UNKNOWN_ERA_BACKGROUND";
-  }
-  const era = parsed.era_background.trim() || "UNKNOWN_ERA_BACKGROUND";
-
   // canonical owner-only pairs
   const others = normalizedParticipants.filter((p) => p !== owner);
   const canonicalPairs = others.map((p) => [owner, p]);
@@ -219,8 +223,8 @@ JSON schema (MUST match exactly):
   }
 
   // Build final flat scenes list.
-  // Rule: per pair "should be 2", but we DO NOT emit scenes with empty evidence_quotes.
-  // => so output per pair may end up < 2 (that's intended per user's instruction).
+  // LLM is instructed to output exactly 2 scenes per pair,
+  // but we still drop scenes without evidence/action to avoid sending garbage to image gen.
   const flatScenes = [];
   const pad2 = (n) => String(n).padStart(2, "0");
 
@@ -239,18 +243,16 @@ JSON schema (MUST match exactly):
         const sa = String(a);
         const sb = String(b);
 
-        // sanitize evidence quotes first (since empty evidence => drop)
         const evidence_quotes = Array.isArray(s.evidence_quotes)
           ? s.evidence_quotes.map(String).map((q) => q.trim()).filter(Boolean).slice(0, 3)
           : [];
 
-        // ✅ If evidence is empty, do NOT include this scene at all.
+        // Drop if no evidence
         if (evidence_quotes.length === 0) return;
-
-        const scene_id = `${sa}${sb}_${pad2(idx + 1)}`;
 
         const action =
           typeof s.action === "string" && s.action.trim() ? s.action.trim() : "UNKNOWN_ACTION";
+        if (action === "UNKNOWN_ACTION") return;
 
         const place =
           typeof s.place === "string" && s.place.trim() ? s.place.trim() : "UNKNOWN_PLACE";
@@ -258,21 +260,22 @@ JSON schema (MUST match exactly):
         let scene_text =
           typeof s.scene_text === "string" && s.scene_text.trim() ? s.scene_text.trim() : "";
 
-        // strip any accidental "pair:" prefix drift
+        // strip accidental "pair:" drift
         scene_text = scene_text.replace(/^pair\s*:\s*.*?\/\s*/i, "").trim();
 
-        // enforce era presence always
-        if (!scene_text.startsWith(era)) {
-          scene_text = `${era}. ${action} ${place}`.trim();
-        }
+        // Last safety: ensure it doesn't contain labels like "A", "B", "1", "2" as standalone tokens.
+        // (We avoid aggressive removal to not break Korean text; just basic token check.)
+        // If it fails, keep it (you can choose to drop instead).
+        // Example drop behavior:
+        // if (/(^|\s)(A|B|C|D|E|\d+)(\s|$)/.test(scene_text)) return;
 
-        // final object in the exact scene schema you want
+        const scene_id = `${sa}${sb}_${pad2(idx + 1)}`;
+
         flatScenes.push({
           scene_id,
           pair: [sa, sb],
           evidence_quotes,
           scene_text,
-          do_not_include: ["assumptions", "invented emotions"],
         });
       });
   }
@@ -280,7 +283,6 @@ JSON schema (MUST match exactly):
   // final output schema: flat scenes array
   const scenesJson = {
     owner_label: owner,
-    era_background: era,
     scenes: flatScenes,
   };
 

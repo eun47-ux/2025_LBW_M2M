@@ -4,30 +4,44 @@ ComfyUI API 노드를 사용한 이미지 생성 워크플로우 실행
 """
 from flask import Flask, request, jsonify, render_template_string
 import json
+import mimetypes
 import os
 from urllib import request as urllib_request
 from pathlib import Path
 from werkzeug.utils import secure_filename
 import tempfile
+from dotenv import load_dotenv
 
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 app.config['UPLOAD_FOLDER'] = tempfile.gettempdir()
 
-SERVER_URL = "http://143.248.107.38:8188"
+BASE_DIR = Path(__file__).resolve().parent
+ROOT_DIR = BASE_DIR.parent
+
+for env_path in [
+    BASE_DIR / ".env",
+    ROOT_DIR / ".env",
+    ROOT_DIR / "backend" / ".env",
+]:
+    if env_path.exists():
+        load_dotenv(env_path)
+
+SERVER_URL = os.getenv("COMFY_URL", "http://143.248.107.38:8188")
 
 # 워크플로우 파일 경로
-WORKFLOW_PATH = Path(__file__).parent.parent / "M2M_image_api.json"
+IMAGE_WORKFLOW_PATH = ROOT_DIR / "backend" / "workflows" / "m2m_image.json"
+VIDEO_WORKFLOW_PATH = ROOT_DIR / "backend" / "workflows" / "m2m_video.json"
 
 # ComfyUI Platform API 키 (환경 변수에서 읽기)
 API_KEY = os.getenv("COMFY_API_KEY", "")
 
-def load_workflow():
-    """M2M_image_api.json 워크플로우 파일 로드"""
-    if not WORKFLOW_PATH.exists():
-        raise FileNotFoundError(f"워크플로우 파일을 찾을 수 없습니다: {WORKFLOW_PATH}")
-    
-    with open(WORKFLOW_PATH, "r", encoding="utf-8") as f:
+def load_workflow(path_obj):
+    """워크플로우 파일 로드"""
+    if not path_obj.exists():
+        raise FileNotFoundError(f"워크플로우 파일을 찾을 수 없습니다: {path_obj}")
+
+    with open(path_obj, "r", encoding="utf-8") as f:
         return json.load(f)
 
 def upload_image_to_comfy(file_path, filename):
@@ -45,11 +59,12 @@ def upload_image_to_comfy(file_path, filename):
         data = f.read()
     
     # multipart/form-data로 업로드
+    mime_type = mimetypes.guess_type(filename)[0] or "application/octet-stream"
     boundary = '----WebKitFormBoundary7MA4YWxkTrZu0gW'
     body = []
     body.append(f'--{boundary}'.encode())
     body.append(f'Content-Disposition: form-data; name="image"; filename="{filename}"'.encode())
-    body.append(b'Content-Type: image/png')
+    body.append(f'Content-Type: {mime_type}'.encode())
     body.append(b'')
     body.append(data)
     body.append(f'--{boundary}--'.encode())
@@ -101,14 +116,71 @@ def send_workflow(workflow_json):
     response = urllib_request.urlopen(req)
     return json.loads(response.read().decode("utf-8"))
 
-def find_loadimage_nodes(workflow):
-    """워크플로우에서 LoadImage 노드 ID 목록을 반환"""
-    load_nodes = [
+def find_nodes(workflow, class_type):
+    return [
         node_id
         for node_id, node in workflow.items()
-        if node.get("class_type") == "LoadImage"
+        if node.get("class_type") == class_type
     ]
+
+def find_loadimage_nodes(workflow):
+    """워크플로우에서 LoadImage 노드 ID 목록을 반환"""
+    load_nodes = find_nodes(workflow, "LoadImage")
     return sorted(load_nodes, key=lambda x: int(x) if str(x).isdigit() else str(x))
+
+def find_first_node(workflow, class_type):
+    ids = find_nodes(workflow, class_type)
+    return ids[0] if ids else None
+
+def find_positive_clip_node(workflow):
+    clip_nodes = find_nodes(workflow, "CLIPTextEncode")
+    for node_id in clip_nodes:
+        title = (workflow[node_id].get("_meta") or {}).get("title", "")
+        if "positive" in title.lower():
+            return node_id
+    for node_id in clip_nodes:
+        text = (workflow[node_id].get("inputs") or {}).get("text", "")
+        if text and "negative" not in text.lower():
+            return node_id
+    return clip_nodes[0] if clip_nodes else None
+
+def build_image_workflow(crop1_filename, crop2_filename, prompt=None, filename_prefix=None):
+    workflow = load_workflow(IMAGE_WORKFLOW_PATH)
+
+    load_nodes = find_loadimage_nodes(workflow)
+    if len(load_nodes) < 2:
+        raise RuntimeError(f"LoadImage 노드를 2개 이상 찾지 못했습니다 (found: {load_nodes})")
+
+    workflow[load_nodes[0]]["inputs"]["image"] = crop1_filename
+    workflow[load_nodes[1]]["inputs"]["image"] = crop2_filename
+
+    gemini_id = find_first_node(workflow, "GeminiImageNode")
+    if gemini_id and prompt:
+        workflow[gemini_id]["inputs"]["prompt"] = prompt
+
+    save_id = find_first_node(workflow, "SaveImage")
+    if save_id and filename_prefix:
+        workflow[save_id]["inputs"]["filename_prefix"] = filename_prefix
+
+    return workflow
+
+def build_video_workflow(image_filename, prompt=None, filename_prefix=None):
+    workflow = load_workflow(VIDEO_WORKFLOW_PATH)
+
+    load_nodes = find_loadimage_nodes(workflow)
+    if not load_nodes:
+        raise RuntimeError("LoadImage 노드를 찾지 못했습니다")
+    workflow[load_nodes[0]]["inputs"]["image"] = image_filename
+
+    positive_id = find_positive_clip_node(workflow)
+    if positive_id and prompt:
+        workflow[positive_id]["inputs"]["text"] = prompt
+
+    save_id = find_first_node(workflow, "SaveVideo")
+    if save_id and filename_prefix:
+        workflow[save_id]["inputs"]["filename_prefix"] = filename_prefix
+
+    return workflow
 
 @app.route("/")
 def index():
@@ -254,7 +326,7 @@ def index():
                     formData.append('crop1', crop1File);
                     formData.append('crop2', crop2File);
                     
-                    const res = await fetch('/api/generate', {
+                    const res = await fetch('/api/generate-image', {
                         method: 'POST',
                         body: formData
                     });
@@ -276,6 +348,7 @@ def index():
     return render_template_string(html)
 
 @app.route("/api/generate", methods=["POST"])
+@app.route("/api/generate-image", methods=["POST"])
 def generate_image():
     """이미지 업로드 및 생성"""
     try:
@@ -285,50 +358,48 @@ def generate_image():
                 "ok": False,
                 "error": "크롭 이미지 2개가 필요합니다 (crop1, crop2)"
             }), 400
-        
+
         crop1_file = request.files['crop1']
         crop2_file = request.files['crop2']
-        
+
         if crop1_file.filename == '' or crop2_file.filename == '':
             return jsonify({
                 "ok": False,
                 "error": "파일을 선택하세요"
             }), 400
-        
+
+        prompt = (request.form.get("prompt") or "").strip()
+        filename_prefix = (request.form.get("filename_prefix") or "").strip()
+
         # 임시 파일로 저장
         crop1_path = os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(crop1_file.filename))
         crop2_path = os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(crop2_file.filename))
         crop1_file.save(crop1_path)
         crop2_file.save(crop2_path)
-        
+
         try:
             # ComfyUI에 이미지 업로드
             crop1_filename = upload_image_to_comfy(crop1_path, crop1_file.filename)
             crop2_filename = upload_image_to_comfy(crop2_path, crop2_file.filename)
-            
-            # 워크플로우 로드
-            workflow = load_workflow()
-            
-            # LoadImage 노드에 업로드한 이미지 파일명 설정
-            load_nodes = find_loadimage_nodes(workflow)
-            if len(load_nodes) < 2:
-                return jsonify({
-                    "ok": False,
-                    "error": f"LoadImage 노드를 2개 이상 찾지 못했습니다 (found: {load_nodes})"
-                }), 500
-            
-            workflow[load_nodes[0]]["inputs"]["image"] = crop1_filename
-            workflow[load_nodes[1]]["inputs"]["image"] = crop2_filename
-            
+
+            workflow = build_image_workflow(
+                crop1_filename,
+                crop2_filename,
+                prompt=prompt or None,
+                filename_prefix=filename_prefix or None
+            )
+
             # 워크플로우 실행
             result = send_workflow(workflow)
-            
+
             return jsonify({
                 "ok": True,
                 "message": "이미지 생성 워크플로우 실행 시작",
                 "prompt_id": result.get("prompt_id", "N/A"),
                 "crop1_filename": crop1_filename,
                 "crop2_filename": crop2_filename,
+                "prompt": prompt,
+                "filename_prefix": filename_prefix,
                 "hint": f"ComfyUI 웹 인터페이스에서 결과를 확인하세요: {SERVER_URL}"
             })
         finally:
@@ -337,7 +408,60 @@ def generate_image():
                 os.remove(crop1_path)
             if os.path.exists(crop2_path):
                 os.remove(crop2_path)
-                
+
+    except Exception as e:
+        return jsonify({
+            "ok": False,
+            "error": str(e)
+        }), 500
+
+@app.route("/api/generate-video", methods=["POST"])
+def generate_video():
+    """영상 생성 워크플로우 실행"""
+    try:
+        if 'image' not in request.files:
+            return jsonify({
+                "ok": False,
+                "error": "image 파일이 필요합니다"
+            }), 400
+
+        image_file = request.files['image']
+        if image_file.filename == '':
+            return jsonify({
+                "ok": False,
+                "error": "파일을 선택하세요"
+            }), 400
+
+        prompt = (request.form.get("prompt") or "").strip()
+        filename_prefix = (request.form.get("filename_prefix") or "").strip()
+
+        image_path = os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(image_file.filename))
+        image_file.save(image_path)
+
+        try:
+            uploaded_name = upload_image_to_comfy(image_path, image_file.filename)
+
+            workflow = build_video_workflow(
+                uploaded_name,
+                prompt=prompt or None,
+                filename_prefix=filename_prefix or None
+            )
+
+            result = send_workflow(workflow)
+
+            return jsonify({
+                "ok": True,
+                "message": "영상 생성 워크플로우 실행 시작",
+                "prompt_id": result.get("prompt_id", "N/A"),
+                "image_filename": uploaded_name,
+                "prompt": prompt,
+                "filename_prefix": filename_prefix,
+                "hint": f"ComfyUI 웹 인터페이스에서 결과를 확인하세요: {SERVER_URL}"
+            })
+        finally:
+            if os.path.exists(image_path):
+                os.remove(image_path)
+
     except Exception as e:
         return jsonify({
             "ok": False,
@@ -349,7 +473,8 @@ if __name__ == "__main__":
     print("M2M 이미지 생성 Flask 앱")
     print("=" * 60)
     print(f"서버: {SERVER_URL}")
-    print(f"워크플로우: {WORKFLOW_PATH}")
+    print(f"이미지 워크플로우: {IMAGE_WORKFLOW_PATH}")
+    print(f"영상 워크플로우: {VIDEO_WORKFLOW_PATH}")
     if API_KEY:
         print(f"✅ API 키 사용: {API_KEY[:20]}...")
     else:

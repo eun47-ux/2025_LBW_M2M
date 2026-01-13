@@ -112,8 +112,10 @@ export default function App() {
   const [sttPreview, setSttPreview] = useState("");
   const [scenesLoading, setScenesLoading] = useState(false);
   const [scenesPreview, setScenesPreview] = useState(null);
-  const [runAllLoading, setRunAllLoading] = useState(false);
-  const [runAllResults, setRunAllResults] = useState(null);
+  const [runImagesLoading, setRunImagesLoading] = useState(false);
+  const [runImagesResults, setRunImagesResults] = useState(null);
+  const [runVideosLoading, setRunVideosLoading] = useState(false);
+  const [runVideosResults, setRunVideosResults] = useState(null);
   const [concatLoading, setConcatLoading] = useState(false);
   const [finalVideoPath, setFinalVideoPath] = useState("");
   const [finalVideoUrl, setFinalVideoUrl] = useState("");
@@ -148,8 +150,10 @@ export default function App() {
     setSttPreview("");
     setScenesLoading(false);
     setScenesPreview(null);
-    setRunAllLoading(false);
-    setRunAllResults(null);
+    setRunImagesLoading(false);
+    setRunImagesResults(null);
+    setRunVideosLoading(false);
+    setRunVideosResults(null);
     setConcatLoading(false);
     setFinalVideoPath("");
     setFinalVideoUrl("");
@@ -256,7 +260,8 @@ export default function App() {
     setSessionId(data.sessionId || sid);
     setSttPreview("");
     setScenesPreview(null);
-    setRunAllResults(null);
+    setRunImagesResults(null);
+    setRunVideosResults(null);
     setFinalVideoPath("");
     setFinalVideoUrl("");
     alert(`업로드 성공! sessionId=${data.sessionId || sid}`);
@@ -395,7 +400,8 @@ export default function App() {
             else {
               setSttPreview(json.preview || "");
               setScenesPreview(null);
-              setRunAllResults(null);
+              setRunImagesResults(null);
+              setRunVideosResults(null);
               setFinalVideoPath("");
               setFinalVideoUrl("");
               alert("STT 완료! transcript.txt 생성됨");
@@ -426,7 +432,8 @@ export default function App() {
             if (!json.ok) alert("Scenes 생성 실패: " + (json.error || ""));
             else {
               setScenesPreview(json.scenesPreviewFirst || null);
-              setRunAllResults(null);
+              setRunImagesResults(null);
+              setRunVideosResults(null);
               setFinalVideoPath("");
               setFinalVideoUrl("");
               alert("Scenes 생성 완료! scenes.json 생성됨");
@@ -444,37 +451,68 @@ export default function App() {
       </button>
 
       <button
-        disabled={!sessionId || runAllLoading || scenesLoading || sttLoading || audioUploading}
+        disabled={!sessionId || runImagesLoading || scenesLoading || sttLoading || audioUploading}
         onClick={async () => {
-          setRunAllLoading(true);
+          setRunImagesLoading(true);
           try {
-            const res = await fetch(`http://localhost:3001/api/session/${sessionId}/run-all-scenes`, {
+            const res = await fetch(`http://localhost:3001/api/session/${sessionId}/run-images`, {
               method: "POST",
             });
             const json = await res.json();
-            console.log("run-all-scenes:", json);
+            console.log("run-images:", json);
 
             if (!json.ok) alert("이미지 생성 실패: " + (json.error || ""));
             else {
-              setRunAllResults(json.results || []);
+              setRunImagesResults(json.results || []);
+              setRunVideosResults(null);
               setFinalVideoPath("");
               setFinalVideoUrl("");
-              alert("이미지 생성 요청 완료!");
+              alert("이미지 생성 완료!");
             }
           } catch (e) {
             console.error(e);
             alert("이미지 생성 실패: " + (e?.message || String(e)));
           } finally {
-            setRunAllLoading(false);
+            setRunImagesLoading(false);
           }
         }}
         style={{ marginLeft: 10 }}
       >
-        {runAllLoading ? "이미지 생성 중..." : "이미지 생성"}
+        {runImagesLoading ? "이미지 생성 중..." : "이미지 생성"}
       </button>
 
       <button
-        disabled={!sessionId || concatLoading || runAllLoading || scenesLoading || sttLoading || audioUploading}
+        disabled={!sessionId || runVideosLoading || scenesLoading || sttLoading || audioUploading}
+        onClick={async () => {
+          setRunVideosLoading(true);
+          try {
+            const res = await fetch(`http://localhost:3001/api/session/${sessionId}/run-videos`, {
+              method: "POST",
+            });
+            const json = await res.json();
+            console.log("run-videos:", json);
+
+            if (!json.ok) alert("영상 생성 실패: " + (json.error || ""));
+            else {
+              setRunVideosResults(json.results || []);
+              setFinalVideoPath("");
+              setFinalVideoUrl("");
+              alert("영상 생성 완료!");
+            }
+          } catch (e) {
+            console.error(e);
+            alert("영상 생성 실패: " + (e?.message || String(e)));
+          } finally {
+            setRunVideosLoading(false);
+          }
+        }}
+        style={{ marginLeft: 10 }}
+      >
+        {runVideosLoading ? "영상 생성 중..." : "영상 생성"}
+      </button>
+
+      <button
+        disabled={!sessionId || concatLoading || runVideosLoading || scenesLoading || sttLoading || audioUploading}
         onClick={async () => {
           setConcatLoading(true);
           try {
@@ -540,7 +578,7 @@ export default function App() {
         </pre>
       )}
 
-      {runAllResults && runAllResults.length > 0 && (
+      {runImagesResults && runImagesResults.length > 0 && (
         <pre
           style={{
             marginTop: 10,
@@ -551,7 +589,22 @@ export default function App() {
             whiteSpace: "pre-wrap",
           }}
         >
-{JSON.stringify(runAllResults, null, 2)}
+{JSON.stringify(runImagesResults, null, 2)}
+        </pre>
+      )}
+
+      {runVideosResults && runVideosResults.length > 0 && (
+        <pre
+          style={{
+            marginTop: 10,
+            background: "#f6f6f6",
+            padding: 10,
+            borderRadius: 12,
+            fontSize: 12,
+            whiteSpace: "pre-wrap",
+          }}
+        >
+{JSON.stringify(runVideosResults, null, 2)}
         </pre>
       )}
 

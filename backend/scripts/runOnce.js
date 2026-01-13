@@ -8,8 +8,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // ✅ 템플릿 JSON 경로 (workflows 폴더)
-const preferredTemplatePath = path.join(__dirname, "..", "workflows", "jieun_m2m image+wan2.2.json");
-const fallbackTemplatePath = path.join(__dirname, "..", "workflows", "jieun_M2M image generation.json");
+const preferredTemplatePath = path.join(__dirname, "..", "workflows", "m2m_image.json");
+const fallbackTemplatePath = path.join(__dirname, "..", "workflows", "jieun_m2m image+wan2.2.json");
 const templatePath = fs.existsSync(preferredTemplatePath) ? preferredTemplatePath : fallbackTemplatePath;
 
 // ✅ 핵심: 함수로 만들기
