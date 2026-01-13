@@ -2,17 +2,8 @@
 import fs from "fs";
 import axios from "axios";
 import FormData from "form-data";
-import dotenv from "dotenv";
 import path from "path";
-import { fileURLToPath } from "url";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-dotenv.config({ path: path.resolve(__dirname, ".env") });
-
-// ✅ ComfyUI 서버 주소
-const COMFY = "http://143.248.107.38:8188";
-const COMFY_API_KEY = process.env.COMFY_API_KEY || "";
+import { COMFY_URL, COMFY_API_KEY } from "./config.js";
 
 // 템플릿 로드
 export function loadWorkflowTemplate(templatePath) {
@@ -73,23 +64,21 @@ export function patchWorkflow({ workflowTemplate, ownerFilename, partnerFilename
   return wf;
 }
 
-export function uploadImageToComfy(localPath, filename) {
+export async function uploadImageToComfy(localPath, filename) {
   const form = new FormData();
   form.append("image", fs.createReadStream(localPath), filename);
   form.append("overwrite", "true");
 
-  return axios
-    .post(`${COMFY}/upload/image`, form, {
-      headers: form.getHeaders(),
-      maxBodyLength: Infinity,
-    })
-    .then((res) => {
-      const data = res.data || {};
-      if (data.subfolder && data.subfolder.length > 0) {
-        return `${data.subfolder}/${data.name}`;
-      }
-      return data.name || filename;
-    });
+  const res = await axios.post(`${COMFY_URL}/upload/image`, form, {
+    headers: form.getHeaders(),
+    maxBodyLength: Infinity,
+  });
+
+  const data = res.data || {};
+  if (data.subfolder && data.subfolder.length > 0) {
+    return `${data.subfolder}/${data.name}`;
+  }
+  return data.name || filename;
 }
 
 export function patchImageWorkflow({
@@ -160,6 +149,6 @@ export async function runComfyPrompt(workflow) {
     payload.extra_data = { api_key_comfy_org: COMFY_API_KEY };
   }
 
-  const res = await axios.post(`${COMFY}/prompt`, payload, { timeout: 600000 });
+  const res = await axios.post(`${COMFY_URL}/prompt`, payload, { timeout: 600000 });
   return res.data; // {prompt_id: "..."}
 }

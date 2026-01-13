@@ -1,0 +1,81 @@
+{
+  "sessionId": "P1",
+  "createdAt": "2026-01-13T12:19:09.980Z",
+  "ownerId": "jj368p8f",
+  "labelMap": {
+    "1": "46z4dz5e",
+    "2": "jj368p8f",
+    "3": "gynb311l",
+    "4": "whcqhrrp"
+  },
+  "cropMetaArr": [
+    {
+      "id": "jj368p8f",
+      "rect": {
+        "x": 242,
+        "y": 134,
+        "width": 310,
+        "height": 510
+      }
+    },
+    {
+      "id": "gynb311l",
+      "rect": {
+        "x": 483,
+        "y": 92,
+        "width": 310,
+        "height": 510
+      }
+    },
+    {
+      "id": "whcqhrrp",
+      "rect": {
+        "x": 599,
+        "y": 334,
+        "width": 310,
+        "height": 510
+      }
+    },
+    {
+      "id": "46z4dz5e",
+      "rect": {
+        "x": 45,
+        "y": 200,
+        "width": 310,
+        "height": 510
+      }
+    }
+  ],
+  "originalSavedName": "original.jpg",
+  "updatedAt": "2026-01-13T12:19:16.371Z",
+  "labels": {
+    "filename": "labels.json",
+    "path": "D:\\2025_LBW_M2M\\data\\sessions\\P1\\labels.json",
+    "createdAt": "2026-01-13T12:19:16.669Z"
+  },
+  "audio": {
+    "filename": "recording.m4a",
+    "path": "D:\\2025_LBW_M2M\\data\\sessions\\P1\\audio\\recording.m4a",
+    "uploadedAt": "2026-01-13T12:19:29.185Z",
+    "mimetype": "audio/x-m4a",
+    "size": 7329303
+  },
+  "transcript": {
+    "filename": "transcript.txt",
+    "path": "D:\\2025_LBW_M2M\\data\\sessions\\P1\\transcript.txt",
+    "createdAt": "2026-01-13T12:20:21.943Z",
+    "audioUsed": "recording.m4a"
+  },
+  "scenes": {
+    "filename": "scenes.json",
+    "path": "D:\\2025_LBW_M2M\\data\\sessions\\P1\\scenes.json",
+    "createdAt": "2026-01-13T12:21:26.157Z",
+    "ownerLabel": "2",
+    "participants": [
+      "1",
+      "2",
+      "3",
+      "4"
+    ]
+  }
+}

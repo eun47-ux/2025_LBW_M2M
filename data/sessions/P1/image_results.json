@@ -1,0 +1,56 @@
+[
+  {
+    "scene_id": "21_01",
+    "pair": [
+      "2",
+      "1"
+    ],
+    "prompt_text": "1990년대 한국 친구와 함께 용문산 계곡 근처에서 시예버스를 타고 계곡 근처에 자리를 잡고 있다.",
+    "error": "Request failed with status code 404"
+  },
+  {
+    "scene_id": "21_02",
+    "pair": [
+      "2",
+      "1"
+    ],
+    "prompt_text": "1990년대 한국 친구와 함께 학교 주변 노래방에서 노래를 부르며 노래 연습을 하고 있다.",
+    "error": "Request failed with status code 404"
+  },
+  {
+    "scene_id": "23_01",
+    "pair": [
+      "2",
+      "3"
+    ],
+    "prompt_text": "1990년대 한국 친구와 함께 500명 하우스에서 쫄면과 떡볶이, 김밥을 먹고 있다.",
+    "error": "Request failed with status code 404"
+  },
+  {
+    "scene_id": "23_02",
+    "pair": [
+      "2",
+      "3"
+    ],
+    "prompt_text": "1990년대 한국 친구와 함께 현대백화점 지하에서 밥을 먹고 쇼핑을 구경하고 있다.",
+    "error": "Request failed with status code 404"
+  },
+  {
+    "scene_id": "24_01",
+    "pair": [
+      "2",
+      "4"
+    ],
+    "prompt_text": "1990년대 한국 친구와 함께 압구정에서 부대찌개를 먹고 있다.",
+    "error": "Request failed with status code 404"
+  },
+  {
+    "scene_id": "24_02",
+    "pair": [
+      "2",
+      "4"
+    ],
+    "prompt_text": "1990년대 한국 친구와 함께 카페에서 담배를 피우는 사람들 사이에서 있다.",
+    "error": "Request failed with status code 404"
+  }
+]

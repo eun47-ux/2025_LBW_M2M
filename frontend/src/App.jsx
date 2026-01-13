@@ -102,9 +102,10 @@ export default function App() {
   const [cropsSaved, setCropsSaved] = useState([]);
   const [ownerId, setOwnerId] = useState(null);
 
-  // session name (optional)
-  const [sessionName, setSessionName] = useState("");
+  // session ID (required, input first)
+  const [sessionIdInput, setSessionIdInput] = useState("");
   const [sessionId, setSessionId] = useState(null);
+  const [sessionCreating, setSessionCreating] = useState(false);
   const [audioFile, setAudioFile] = useState(null);
   const [audioUploading, setAudioUploading] = useState(false);
   const [audioUploadProgress, setAudioUploadProgress] = useState(0);
@@ -238,17 +239,18 @@ export default function App() {
    * - labelMap
    */
   const uploadSessionToBackend = async () => {
+    if (!sessionId) {
+      alert("먼저 세션 ID를 입력하고 확인 버튼을 클릭해주세요.");
+      return;
+    }
+
     if (!imageFile || !ownerId || cropsSaved.length < 2) {
       alert("이미지 업로드 + 크롭 2개 이상 + Owner 선택이 필요해요.");
       return;
     }
 
-    const sid = (sessionName || `session-${Date.now()}`).trim();
-
     const form = new FormData();
-    form.append("sessionName", sid);
     form.append("photo", imageFile); // optional: original
-
     form.append("ownerId", ownerId);
     form.append("labelMap", JSON.stringify(labelMap));
 
@@ -258,80 +260,145 @@ export default function App() {
       form.append("cropMeta", JSON.stringify({ id: c.id, rect: c.rect })); // repeated fields are ok
     });
 
-    // NOTE: change to your backend URL
-    const res = await fetch("http://localhost:3001/api/session/manual-crops", {
-      method: "POST",
-      body: form,
-    });
-
-    const data = await res.json();
-    if (!data.ok) {
-      console.error(data);
-      alert("업로드 실패. 콘솔 확인!");
-      return;
-    }
-    setSessionId(data.sessionId || sid);
-    setSttPreview("");
-    setScenesPreview(null);
-    setRunImagesResults(null);
-    setRunVideosResults(null);
-    setFinalVideoPath("");
-    setFinalVideoUrl("");
-    alert(`업로드 성공! sessionId=${data.sessionId || sid}`);
-
-    const finalSessionId = data.sessionId || sid;
     try {
-      const labelsRes = await fetch(`http://localhost:3001/api/session/${finalSessionId}/build-labels`, {
+      // 크롭 정보 업데이트
+      const res = await fetch(`http://localhost:3001/api/session/${sessionId}/update-crops`, {
+        method: "POST",
+        body: form,
+      });
+
+      const data = await res.json();
+      if (!data.ok) {
+        console.error(data);
+        alert("업로드 실패. 콘솔 확인!");
+        return;
+      }
+
+      // labels.json 생성 (크롭 추출 + ComfyUI 업로드)
+      const labelsRes = await fetch(`http://localhost:3001/api/session/${sessionId}/build-labels`, {
         method: "POST",
       });
       const labelsJson = await labelsRes.json();
       console.log("build-labels:", labelsJson);
       if (!labelsJson.ok) {
         alert("labels 생성 실패: " + (labelsJson.error || ""));
+        return;
       }
+
+      setSttPreview("");
+      setScenesPreview(null);
+      setRunImagesResults(null);
+      setRunVideosResults(null);
+      setFinalVideoPath("");
+      setFinalVideoUrl("");
+      alert("저장 완료! 크롭 정보가 업로드되고 labels.json이 생성되었습니다.");
     } catch (e) {
       console.error(e);
-      alert("labels 생성 실패: " + (e?.message || String(e)));
+      alert("저장 실패: " + (e?.message || String(e)));
+    }
+  };
+
+  // 세션 생성
+  const createSession = async () => {
+    if (!sessionIdInput.trim()) {
+      alert("세션 ID를 입력해주세요.");
+      return;
+    }
+
+    setSessionCreating(true);
+    try {
+      const res = await fetch("http://localhost:3001/api/session/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId: sessionIdInput.trim() }),
+      });
+      const json = await res.json();
+      if (!json.ok) {
+        alert("세션 생성 실패: " + (json.error || ""));
+        return;
+      }
+      setSessionId(json.sessionId);
+      alert(`세션 생성 완료! sessionId=${json.sessionId}`);
+    } catch (e) {
+      console.error(e);
+      alert("세션 생성 실패: " + (e?.message || String(e)));
+    } finally {
+      setSessionCreating(false);
     }
   };
 
   return (
     <div style={{ padding: 16, fontFamily: "system-ui, -apple-system, Segoe UI, Roboto" }}>
       <h2 style={{ margin: 0 }}>🧩 Manual Crop + Owner Select (MVP)</h2>
-      <p style={{ marginTop: 6, color: "#555" }}>
-        한 사람씩 박스를 잡고 <b>이 크롭 저장</b>을 눌러 누적하세요. 그 다음 <b>Owner</b>를 선택합니다.
-      </p>
+      
+      {/* 1단계: 세션 ID 입력 */}
+      <div style={{ marginTop: 16, padding: 16, background: "#f9f9f9", borderRadius: 12, border: "2px solid #ddd" }}>
+        <h3 style={{ margin: "0 0 12px 0", fontSize: 16 }}>1단계: 세션 ID 입력 (필수)</h3>
+        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+          <input
+            value={sessionIdInput}
+            onChange={(e) => setSessionIdInput(e.target.value)}
+            placeholder="세션 ID 입력 (예: test01)"
+            style={{ padding: 10, border: "1px solid #ddd", borderRadius: 8, minWidth: 220, flex: 1 }}
+            disabled={!!sessionId}
+          />
+          <button
+            onClick={createSession}
+            disabled={!sessionIdInput.trim() || sessionCreating || !!sessionId}
+            style={{
+              padding: "10px 20px",
+              borderRadius: 10,
+              border: "1px solid #ddd",
+              background: sessionId ? "#4CAF50" : "#111",
+              color: "white",
+              cursor: sessionId || !sessionIdInput.trim() ? "not-allowed" : "pointer",
+            }}
+          >
+            {sessionCreating ? "생성 중..." : sessionId ? "✅ 생성 완료" : "확인"}
+          </button>
+        </div>
+        {sessionId && (
+          <p style={{ marginTop: 8, fontSize: 12, color: "#4CAF50" }}>
+            ✅ 세션 ID: <strong>{sessionId}</strong>
+          </p>
+        )}
+      </div>
 
-      <div style={{ display: "flex", gap: 16, flexWrap: "wrap", alignItems: "center" }}>
-        <input type="file" accept="image/*" onChange={onSelectImage} />
+      {/* 2단계: 인물 크롭 + Owner 지정 */}
+      <div style={{ marginTop: 24 }}>
+        <h3 style={{ margin: "0 0 12px 0", fontSize: 16 }}>2단계: 인물 크롭 + Owner 지정</h3>
+        {!sessionId && (
+          <p style={{ color: "orange", fontSize: 14 }}>
+            ⚠️ 먼저 세션 ID를 입력하고 확인 버튼을 클릭해주세요.
+          </p>
+        )}
+        <div style={{ display: "flex", gap: 16, flexWrap: "wrap", alignItems: "center" }}>
+          <input type="file" accept="image/*" onChange={onSelectImage} disabled={!sessionId} />
 
-        <input
-          value={sessionName}
-          onChange={(e) => setSessionName(e.target.value)}
-          placeholder="세션 이름(옵션) 예: p01"
-          style={{ padding: 10, border: "1px solid #ddd", borderRadius: 8, minWidth: 220 }}
-        />
-
-        <button
-          onClick={uploadSessionToBackend}
-          style={{
-            padding: "10px 12px",
-            borderRadius: 10,
-            border: "1px solid #ddd",
-            background: ownerId ? "#111" : "#eee",
-            color: ownerId ? "white" : "#777",
-            cursor: ownerId ? "pointer" : "not-allowed",
-          }}
-          disabled={!ownerId}
-          title="(옵션) 백엔드로 업로드"
-        >
-          세션 업로드(백엔드)
-        </button>
+          <button
+            onClick={uploadSessionToBackend}
+            style={{
+              padding: "10px 12px",
+              borderRadius: 10,
+              border: "1px solid #ddd",
+              background: ownerId && sessionId ? "#111" : "#eee",
+              color: ownerId && sessionId ? "white" : "#777",
+              cursor: ownerId && sessionId ? "pointer" : "not-allowed",
+            }}
+            disabled={!ownerId || !sessionId}
+            title="크롭 저장 및 백엔드 업로드"
+          >
+            저장
+          </button>
+        </div>
       </div>
 
       <hr style={{ margin: "20px 0" }} />
 
-      <h3>🎙️ 대화 녹음 업로드</h3>
+      {/* 3단계: 오디오 업로드 + 씬 생성 */}
+      <div>
+        <h3 style={{ margin: "0 0 12px 0", fontSize: 16 }}>3단계: 오디오 업로드 + 씬 생성</h3>
+        <h4 style={{ margin: "8px 0", fontSize: 14, color: "#555" }}>🎙️ 대화 녹음 업로드</h4>
 
       <input
         type="file"
@@ -462,67 +529,86 @@ export default function App() {
       >
         {scenesLoading ? "Scenes 생성 중..." : "Scenes 생성"}
       </button>
+      </div>
 
-      <button
-        disabled={!sessionId || runImagesLoading || scenesLoading || sttLoading || audioUploading}
-        onClick={async () => {
-          setRunImagesLoading(true);
-          try {
-            const res = await fetch(`http://localhost:3001/api/session/${sessionId}/run-images`, {
-              method: "POST",
-            });
-            const json = await res.json();
-            console.log("run-images:", json);
+      {/* 4단계: 영상 생성 */}
+      <div style={{ marginTop: 24 }}>
+        <h3 style={{ margin: "0 0 12px 0", fontSize: 16 }}>4단계: 영상 생성</h3>
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
+          <button
+            disabled={!sessionId || runImagesLoading || scenesLoading || sttLoading || audioUploading}
+            onClick={async () => {
+              setRunImagesLoading(true);
+              try {
+                const res = await fetch(`http://localhost:3001/api/session/${sessionId}/run-images`, {
+                  method: "POST",
+                });
+                const json = await res.json();
+                console.log("run-images:", json);
 
-            if (!json.ok) alert("이미지 생성 실패: " + (json.error || ""));
-            else {
-              setRunImagesResults(json.results || []);
-              setRunVideosResults(null);
-              setFinalVideoPath("");
-              setFinalVideoUrl("");
-              alert("이미지 생성 완료!");
-            }
-          } catch (e) {
-            console.error(e);
-            alert("이미지 생성 실패: " + (e?.message || String(e)));
-          } finally {
-            setRunImagesLoading(false);
-          }
-        }}
-        style={{ marginLeft: 10 }}
-      >
-        {runImagesLoading ? "이미지 생성 중..." : "이미지 생성"}
-      </button>
+                if (!json.ok) alert("이미지 생성 실패: " + (json.error || ""));
+                else {
+                  setRunImagesResults(json.results || []);
+                  setRunVideosResults(null);
+                  setFinalVideoPath("");
+                  setFinalVideoUrl("");
+                  alert("이미지 생성 완료!");
+                }
+              } catch (e) {
+                console.error(e);
+                alert("이미지 생성 실패: " + (e?.message || String(e)));
+              } finally {
+                setRunImagesLoading(false);
+              }
+            }}
+            style={{
+              padding: "10px 20px",
+              borderRadius: 10,
+              border: "1px solid #ddd",
+              background: "#111",
+              color: "white",
+            }}
+          >
+            {runImagesLoading ? "이미지 생성 중..." : "이미지 생성"}
+          </button>
 
-      <button
-        disabled={!sessionId || runVideosLoading || scenesLoading || sttLoading || audioUploading}
-        onClick={async () => {
-          setRunVideosLoading(true);
-          try {
-            const res = await fetch(`http://localhost:3001/api/session/${sessionId}/run-videos`, {
-              method: "POST",
-            });
-            const json = await res.json();
-            console.log("run-videos:", json);
+          <button
+            disabled={!sessionId || runVideosLoading || scenesLoading || sttLoading || audioUploading}
+            onClick={async () => {
+              setRunVideosLoading(true);
+              try {
+                const res = await fetch(`http://localhost:3001/api/session/${sessionId}/run-videos`, {
+                  method: "POST",
+                });
+                const json = await res.json();
+                console.log("run-videos:", json);
 
-            if (!json.ok) alert("영상 생성 실패: " + (json.error || ""));
-            else {
-              setRunVideosResults(json.results || []);
-              setFinalVideoPath("");
-              setFinalVideoUrl("");
-              alert("영상 생성 완료!");
-            }
-          } catch (e) {
-            console.error(e);
-            alert("영상 생성 실패: " + (e?.message || String(e)));
-          } finally {
-            setRunVideosLoading(false);
-          }
-        }}
-        style={{ marginLeft: 10 }}
-      >
-        {runVideosLoading ? "영상 생성 중..." : "영상 생성"}
-      </button>
+                if (!json.ok) alert("영상 생성 실패: " + (json.error || ""));
+                else {
+                  setRunVideosResults(json.results || []);
+                  setFinalVideoPath("");
+                  setFinalVideoUrl("");
+                  alert("영상 생성 완료!");
+                }
+              } catch (e) {
+                console.error(e);
+                alert("영상 생성 실패: " + (e?.message || String(e)));
+              } finally {
+                setRunVideosLoading(false);
+              }
+            }}
+            style={{
+              padding: "10px 20px",
+              borderRadius: 10,
+              border: "1px solid #ddd",
+              background: "#111",
+              color: "white",
+            }}
+          >
+            {runVideosLoading ? "영상 생성 중..." : "영상 생성"}
+          </button>
+        </div>
+      </div>
 
       <button
         disabled={!sessionId || concatLoading || runVideosLoading || scenesLoading || sttLoading || audioUploading}
@@ -587,11 +673,6 @@ export default function App() {
         {playlistLoading ? "연속 재생 불러오는 중..." : "연속 재생 불러오기"}
       </button>
 
-      {!sessionId && (
-        <p style={{ color: "gray" }}>
-          ⚠️ 먼저 사진 크롭을 완료해서 sessionId를 만든 뒤 업로드할 수 있어요.
-        </p>
-      )}
 
       {sttPreview && (
         <pre
