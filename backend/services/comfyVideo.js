@@ -106,6 +106,29 @@ export async function downloadComfyFile(comfyBase, fileInfo, destPath) {
   return destPath;
 }
 
+function joinUrl(base, subpath) {
+  const cleanBase = (base || "").replace(/\/+$/, "");
+  const cleanPath = (subpath || "").replace(/^\/+/, "");
+  return `${cleanBase}/${cleanPath}`;
+}
+
+export async function downloadComfyStaticFile(comfyStaticBase, fileInfo, destPath) {
+  const subfolder = (fileInfo.subfolder || "").replace(/\\/g, "/").replace(/^\/+|\/+$/g, "");
+  const filename = (fileInfo.filename || "").replace(/\\/g, "/");
+  const relPath = [subfolder, filename].filter(Boolean).join("/");
+  const url = joinUrl(comfyStaticBase, relPath);
+
+  const res = await axios.get(url, { responseType: "stream", timeout: 120000 });
+  await new Promise((resolve, reject) => {
+    const out = fs.createWriteStream(destPath);
+    res.data.pipe(out);
+    out.on("finish", resolve);
+    out.on("error", reject);
+  });
+
+  return destPath;
+}
+
 export function safeSceneFilename(sceneId, fallback) {
   const base = (sceneId || fallback || "scene").toString().replace(/[^a-zA-Z0-9_-]/g, "_");
   return `${base}.mp4`;

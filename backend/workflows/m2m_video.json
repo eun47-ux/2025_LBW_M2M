@@ -178,7 +178,7 @@
   "13": {
     "inputs": {
       "filename_prefix": "M2M/test02",
-      "format": "auto",
+      "format": "mp4",
       "codec": "auto",
       "video": [
         "3",

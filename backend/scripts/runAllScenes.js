@@ -125,8 +125,6 @@ export async function runImageScenes(sessionId) {
   fs.mkdirSync(imagesDir, { recursive: true });
 
   const results = [];
-  const videosDir = path.join(sessionDir, "videos");
-  fs.mkdirSync(videosDir, { recursive: true });
 
   for (const item of items) {
     const partnerCropPath = resolveCropPath(sessionDir, item.partnerLabel, labelToFilename);
@@ -193,49 +191,61 @@ export async function runVideoScenes(sessionId) {
   );
 
   const results = [];
+  const videosDir = path.join(sessionDir, "videos");
+  fs.mkdirSync(videosDir, { recursive: true });
 
   for (const item of items) {
-    const imageResult = imageByScene.get(String(item.scene_id));
-    const imagePath =
-      imageResult?.image_path || path.join(sessionDir, "images", `${item.scene_id}.png`);
-    if (!fs.existsSync(imagePath)) {
-      console.warn(`⚠️ image not found for scene ${item.scene_id}: ${imagePath}`);
-      continue;
+    try {
+      const imageResult = imageByScene.get(String(item.scene_id));
+      const imagePath =
+        imageResult?.image_path || path.join(sessionDir, "images", `${item.scene_id}.png`);
+      if (!fs.existsSync(imagePath)) {
+        throw new Error(`image not found: ${imagePath}`);
+      }
+
+      const form = new FormData();
+      form.append("image", fs.createReadStream(imagePath), path.basename(imagePath));
+      form.append("prompt", item.promptText);
+      form.append("filename_prefix", `M2M/${sessionId}/videos/${item.scene_id}`);
+
+      const videoRun = await requestFlask("/api/generate-video", form);
+      const videoPromptId = videoRun?.prompt_id;
+      if (!videoPromptId) {
+        throw new Error(`Flask video run missing prompt_id for scene ${item.scene_id}`);
+      }
+
+      const videos = await waitForVideoOutput(COMFY, videoPromptId, 900000);
+      if (!videos.length) {
+        throw new Error(`No video output for scene ${item.scene_id} (prompt ${videoPromptId})`);
+      }
+
+      const videoInfo = videos[0];
+      const localVideoPath = path.join(videosDir, `${item.scene_id}.mp4`);
+      await downloadComfyFile(COMFY, videoInfo, localVideoPath);
+
+      results.push({
+        scene_id: item.scene_id,
+        pair: item.pair,
+        prompt_text: item.promptText,
+        image_prompt_id: imageResult?.image_prompt_id,
+        video_prompt_id: videoPromptId,
+        image_path: imagePath,
+        comfy_image: videoRun?.image_filename || null,
+        video_path: localVideoPath,
+        comfy_video: videoInfo,
+      });
+
+      console.log(`✅ video ${item.scene_id} → ${videoPromptId} (downloaded)`);
+    } catch (err) {
+      const message = err?.message || String(err);
+      console.warn(`⚠️ video failed for scene ${item.scene_id}: ${message}`);
+      results.push({
+        scene_id: item.scene_id,
+        pair: item.pair,
+        prompt_text: item.promptText,
+        error: message,
+      });
     }
-
-    const form = new FormData();
-    form.append("image", fs.createReadStream(imagePath), path.basename(imagePath));
-    form.append("prompt", item.promptText);
-    form.append("filename_prefix", `M2M/${sessionId}/videos/${item.scene_id}`);
-
-    const videoRun = await requestFlask("/api/generate-video", form);
-    const videoPromptId = videoRun?.prompt_id;
-    if (!videoPromptId) {
-      throw new Error(`Flask video run missing prompt_id for scene ${item.scene_id}`);
-    }
-
-    const videos = await waitForVideoOutput(COMFY, videoPromptId, 300000);
-    if (!videos.length) {
-      throw new Error(`No video output for scene ${item.scene_id} (prompt ${videoPromptId})`);
-    }
-
-    const videoInfo = videos[0];
-    const localVideoPath = path.join(videosDir, `${item.scene_id}.mp4`);
-    await downloadComfyFile(COMFY, videoInfo, localVideoPath);
-
-    results.push({
-      scene_id: item.scene_id,
-      pair: item.pair,
-      prompt_text: item.promptText,
-      image_prompt_id: imageResult?.image_prompt_id,
-      video_prompt_id: videoPromptId,
-      image_path: imagePath,
-      comfy_image: videoRun?.image_filename || null,
-      video_path: localVideoPath,
-      comfy_video: videoInfo,
-    });
-
-    console.log(`✅ video ${item.scene_id} → ${videoPromptId} (downloaded)`);
   }
 
   const outPath = path.join(sessionDir, "comfy_results.json");

@@ -159,8 +159,11 @@ def build_image_workflow(crop1_filename, crop2_filename, prompt=None, filename_p
         workflow[gemini_id]["inputs"]["prompt"] = prompt
 
     save_id = find_first_node(workflow, "SaveImage")
-    if save_id and filename_prefix:
-        workflow[save_id]["inputs"]["filename_prefix"] = filename_prefix
+    if save_id:
+        if filename_prefix:
+            workflow[save_id]["inputs"]["filename_prefix"] = filename_prefix
+        if "format" in workflow[save_id].get("inputs", {}):
+            workflow[save_id]["inputs"]["format"] = "mp4"
 
     return workflow
 

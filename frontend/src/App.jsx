@@ -119,6 +119,11 @@ export default function App() {
   const [concatLoading, setConcatLoading] = useState(false);
   const [finalVideoPath, setFinalVideoPath] = useState("");
   const [finalVideoUrl, setFinalVideoUrl] = useState("");
+  const [playlistLoading, setPlaylistLoading] = useState(false);
+  const [playlistItems, setPlaylistItems] = useState([]);
+  const [playlistIndex, setPlaylistIndex] = useState(0);
+  const [playlistMode, setPlaylistMode] = useState("");
+  const playlistVideoRef = useRef(null);
 
   // cleanup object urls
   useEffect(() => {
@@ -128,6 +133,14 @@ export default function App() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (!playlistItems.length) return;
+    const video = playlistVideoRef.current;
+    if (!video) return;
+    video.load();
+    video.play().catch(() => {});
+  }, [playlistIndex, playlistItems]);
 
   const onSelectImage = async (e) => {
     const f = e.target.files?.[0];
@@ -542,6 +555,38 @@ export default function App() {
         {concatLoading ? "영상 합치는 중..." : "영상 합치기"}
       </button>
 
+      <button
+        disabled={!sessionId || playlistLoading || runVideosLoading || scenesLoading || sttLoading || audioUploading}
+        onClick={async () => {
+          setPlaylistLoading(true);
+          try {
+            const res = await fetch(
+              `http://localhost:3001/api/session/${sessionId}/videos-playlist`
+            );
+            const json = await res.json();
+            console.log("videos-playlist:", json);
+
+            if (!json.ok) {
+              alert("연속 재생 불러오기 실패: " + (json.error || ""));
+              return;
+            }
+
+            setPlaylistItems(json.items || []);
+            setPlaylistIndex(0);
+            setPlaylistMode(json.mode || "");
+            alert(`연속 재생 준비 완료! (${(json.items || []).length}개)`);
+          } catch (e) {
+            console.error(e);
+            alert("연속 재생 불러오기 실패: " + (e?.message || String(e)));
+          } finally {
+            setPlaylistLoading(false);
+          }
+        }}
+        style={{ marginLeft: 10 }}
+      >
+        {playlistLoading ? "연속 재생 불러오는 중..." : "연속 재생 불러오기"}
+      </button>
+
       {!sessionId && (
         <p style={{ color: "gray" }}>
           ⚠️ 먼저 사진 크롭을 완료해서 sessionId를 만든 뒤 업로드할 수 있어요.
@@ -640,6 +685,58 @@ export default function App() {
               />
             </>
           )}
+        </>
+      )}
+
+      {playlistItems.length > 0 && (
+        <>
+          <p style={{ marginTop: 8, fontSize: 12, color: "#555" }}>
+            🎬 연속 재생({playlistMode || "auto"}): {playlistIndex + 1}/{playlistItems.length}
+          </p>
+          {playlistMode === "manifest" && (
+            <p style={{ marginTop: 4, fontSize: 11, color: "#888" }}>
+              videos_manifest.json 우선 사용 중
+            </p>
+          )}
+          <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 6 }}>
+            <button
+              disabled={playlistIndex === 0}
+              onClick={() => setPlaylistIndex((i) => Math.max(0, i - 1))}
+              style={{
+                padding: "6px 10px",
+                borderRadius: 8,
+                border: "1px solid #ddd",
+                background: "#fff",
+                fontSize: 12,
+                fontWeight: 700,
+              }}
+            >
+              이전
+            </button>
+            <button
+              disabled={playlistIndex >= playlistItems.length - 1}
+              onClick={() => setPlaylistIndex((i) => Math.min(playlistItems.length - 1, i + 1))}
+              style={{
+                padding: "6px 10px",
+                borderRadius: 8,
+                border: "1px solid #ddd",
+                background: "#fff",
+                fontSize: 12,
+                fontWeight: 700,
+              }}
+            >
+              다음
+            </button>
+          </div>
+          <video
+            ref={playlistVideoRef}
+            src={playlistItems[playlistIndex]?.url || ""}
+            controls
+            onEnded={() => {
+              setPlaylistIndex((i) => (i < playlistItems.length - 1 ? i + 1 : i));
+            }}
+            style={{ marginTop: 8, width: "100%", maxWidth: 640, borderRadius: 12 }}
+          />
         </>
       )}
 

@@ -13,7 +13,12 @@ import { fileURLToPath } from "url";
 import { transcriptToScenes } from "./services/transcriptToScenes.js";
 import { runAllScenes, runImageScenes, runVideoScenes } from "./scripts/runAllScenes.js";
 import { concatVideos } from "./services/concatVideos.js";
-import { downloadComfyFile, safeSceneFilename, waitForVideoOutput } from "./services/comfyVideo.js";
+import {
+  downloadComfyFile,
+  downloadComfyStaticFile,
+  safeSceneFilename,
+  waitForVideoOutput,
+} from "./services/comfyVideo.js";
 
 
 
@@ -26,6 +31,7 @@ const __dirname = path.dirname(__filename);
 // 1) Config
 const PORT = 3001;
 const COMFY = "http://143.248.107.38:8188";
+const COMFY_STATIC_BASE = process.env.COMFY_STATIC_BASE || "http://143.248.107.38:8186";
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 // ✅ 너 프로젝트 구조: 루트에 data/sessions
@@ -63,6 +69,12 @@ function safeSessionName(name) {
 
 function clamp(v, min, max) {
   return Math.max(min, Math.min(max, v));
+}
+
+function joinUrl(base, subpath) {
+  const cleanBase = (base || "").replace(/\/+$/, "");
+  const cleanPath = (subpath || "").replace(/^\/+/, "");
+  return `${cleanBase}/${cleanPath}`;
 }
 
 // 세션 폴더에서 원본 이미지 파일 자동 탐색
@@ -469,6 +481,81 @@ app.post("/api/session/:sessionId/run-videos", async (req, res) => {
 });
 
 /**
+ * ✅ 8186 연속재생용 플레이리스트 조회
+ * GET /api/session/:sessionId/videos-playlist
+ */
+app.get("/api/session/:sessionId/videos-playlist", async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    const sessionPath = path.join(SESSIONS_DIR, sessionId);
+    if (!fs.existsSync(sessionPath)) {
+      return res.status(404).json({ ok: false, error: "Session folder not found", sessionPath });
+    }
+
+    const manifestPath = path.join(sessionPath, "videos_manifest.json");
+    if (fs.existsSync(manifestPath)) {
+      const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf-8"));
+      const items = Array.isArray(manifest.items) ? manifest.items : [];
+      return res.json({
+        ok: true,
+        sessionId,
+        mode: "manifest",
+        items,
+        manifestPath,
+      });
+    }
+
+    const resultsPath = path.join(sessionPath, "comfy_results.json");
+    if (!fs.existsSync(resultsPath)) {
+      return res.status(400).json({ ok: false, error: "comfy_results.json not found" });
+    }
+
+    const results = JSON.parse(fs.readFileSync(resultsPath, "utf-8"));
+    const items = Array.isArray(results)
+      ? results
+          .map((r) => {
+            const info = r?.comfy_video;
+            if (info?.filename) {
+              const subfolder = (info.subfolder || "").replace(/\\/g, "/").replace(/^\/+|\/+$/g, "");
+              const rel = [subfolder, info.filename].filter(Boolean).join("/");
+              return {
+                scene_id: r.scene_id,
+                url: joinUrl(COMFY_STATIC_BASE, rel),
+                source: "comfy_static",
+              };
+            }
+
+            if (r?.video_path) {
+              const filename = path.basename(r.video_path);
+              return {
+                scene_id: r.scene_id,
+                url: `http://localhost:${PORT}/sessions/${sessionId}/videos/${filename}`,
+                source: "local",
+              };
+            }
+            return null;
+          })
+          .filter(Boolean)
+      : [];
+
+    return res.json({
+      ok: true,
+      sessionId,
+      mode: "comfy_results",
+      items,
+      manifestHint: manifestPath,
+    });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({
+      ok: false,
+      error: "videos-playlist failed",
+      detail: e?.message || String(e),
+    });
+  }
+});
+
+/**
  * ✅ Comfy mp4 다운로드 + final.mp4 합치기
  * POST /api/session/:sessionId/concat-videos
  */
@@ -510,7 +597,12 @@ app.post("/api/session/:sessionId/concat-videos", async (req, res) => {
       const videoInfo = videos[0];
       const filename = safeSceneFilename(item.scene_id, promptId);
       const localPath = path.join(videosDir, filename);
-      await downloadComfyFile(COMFY, videoInfo, localPath);
+
+      if (COMFY_STATIC_BASE) {
+        await downloadComfyStaticFile(COMFY_STATIC_BASE, videoInfo, localPath);
+      } else {
+        await downloadComfyFile(COMFY, videoInfo, localPath);
+      }
 
       downloaded.push({
         scene_id: item.scene_id,
@@ -534,6 +626,7 @@ app.post("/api/session/:sessionId/concat-videos", async (req, res) => {
       finalPath,
       count: downloaded.length,
       videos: downloaded,
+      downloadBase: COMFY_STATIC_BASE || COMFY,
     });
   } catch (e) {
     console.error(e);
