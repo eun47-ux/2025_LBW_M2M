@@ -188,53 +188,58 @@ export async function runImageScenes(sessionId) {
         throw new Error(`Python image run missing prompt_id for scene ${item.scene_id}`);
       }
 
-      // 이미지가 생성될 때까지 대기 (약간의 지연)
-      await new Promise((r) => setTimeout(r, 5000));
-
-      const localImagePath = path.join(imagesDir, `${item.scene_id}.png`);
-
-      // M2M/${sessionId}/images/ 폴더에서 scene_id로 시작하는 파일 찾기
-      if (!COMFY_STATIC_BASE) {
-        throw new Error("COMFY_STATIC_BASE가 설정되지 않았습니다");
+      // ComfyUI에서 이미지 생성 완료 대기
+      const images = await waitForImageOutput(COMFY_URL, imagePromptId, 300000);
+      if (!images.length) {
+        throw new Error(`No image output for scene ${item.scene_id} (prompt ${imagePromptId})`);
       }
 
-      const imagesBaseUrl = `${COMFY_STATIC_BASE}/M2M/${sessionId}/images/`;
-      
-      // 여러 가능한 파일명 패턴 시도
-      const possibleFilenames = [
-        `${item.scene_id}_00001_.png`,
-        `${item.scene_id}_00001.png`,
-        `${item.scene_id}.png`,
-      ];
+      const localImagePath = path.join(imagesDir, `${item.scene_id}.png`);
+      const imageInfo = images[0];
 
+      // Static server에서 다운로드 시도
       let downloaded = false;
-      for (const filename of possibleFilenames) {
-        const url = `${imagesBaseUrl}${filename}`;
+      if (COMFY_STATIC_BASE) {
+        const imagesBaseUrl = `${COMFY_STATIC_BASE}/M2M/${sessionId}/images/`;
         
-        try {
-          console.log(`[DEBUG] 이미지 다운로드 시도: ${url}`);
-          const res = await axios.get(url, { responseType: "stream", timeout: 120000 });
-          await new Promise((resolve, reject) => {
-            const out = fs.createWriteStream(localImagePath);
-            res.data.pipe(out);
-            out.on("finish", resolve);
-            out.on("error", reject);
-          });
-          console.log(`[DEBUG] 이미지 다운로드 성공: ${url} → ${localImagePath}`);
-          downloaded = true;
-          break;
-        } catch (directErr) {
-          if (directErr.response?.status === 404) {
-            console.log(`[DEBUG] 파일 없음: ${filename}`);
-            continue; // 다음 파일명 시도
+        // 여러 가능한 파일명 패턴 시도
+        const possibleFilenames = [
+          `${item.scene_id}_00001_.png`,
+          `${item.scene_id}_00001.png`,
+          `${item.scene_id}.png`,
+        ];
+
+        for (const filename of possibleFilenames) {
+          const url = `${imagesBaseUrl}${filename}`;
+          
+          try {
+            console.log(`[DEBUG] 이미지 다운로드 시도: ${url}`);
+            const res = await axios.get(url, { responseType: "stream", timeout: 120000 });
+            await new Promise((resolve, reject) => {
+              const out = fs.createWriteStream(localImagePath);
+              res.data.pipe(out);
+              out.on("finish", resolve);
+              out.on("error", reject);
+            });
+            console.log(`[DEBUG] 이미지 다운로드 성공: ${url} → ${localImagePath}`);
+            downloaded = true;
+            break;
+          } catch (directErr) {
+            if (directErr.response?.status === 404) {
+              console.log(`[DEBUG] 파일 없음: ${filename}`);
+              continue; // 다음 파일명 시도
+            }
+            console.error(`[DEBUG] 다운로드 에러: ${filename}`, directErr.message);
+            throw directErr; // 다른 에러는 재throw
           }
-          console.error(`[DEBUG] 다운로드 에러: ${filename}`, directErr.message);
-          throw directErr; // 다른 에러는 재throw
         }
       }
 
+      // Static server 다운로드 실패 시 ComfyUI API를 통한 다운로드 (fallback)
       if (!downloaded) {
-        throw new Error(`이미지를 찾을 수 없습니다. 시도한 패턴: ${possibleFilenames.join(", ")}`);
+        console.log(`[DEBUG] Static server 다운로드 실패, ComfyUI API로 fallback`);
+        await downloadComfyFile(COMFY_URL, imageInfo, localImagePath);
+        downloaded = true;
       }
 
       results.push({

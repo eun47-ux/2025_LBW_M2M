@@ -1,16 +1,45 @@
 {
-  "84": {
+  "1": {
     "inputs": {
-      "clip_name": "umt5_xxl_fp8_e4m3fn_scaled.safetensors",
-      "type": "wan",
-      "device": "default"
+      "temperature": 0.5,
+      "modalities": "image+text",
+      "aspect_ratio": "auto"
     },
-    "class_type": "CLIPLoader",
+    "class_type": "AV_NanoBananaApiConfig",
     "_meta": {
-      "title": "Load CLIP"
+      "title": "NanoBanana API Config"
     }
   },
-  "85": {
+  "2": {
+    "inputs": {
+      "samples": [
+        "4",
+        0
+      ],
+      "vae": [
+        "7",
+        0
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE Decode"
+    }
+  },
+  "3": {
+    "inputs": {
+      "fps": 16,
+      "images": [
+        "2",
+        0
+      ]
+    },
+    "class_type": "CreateVideo",
+    "_meta": {
+      "title": "Create Video"
+    }
+  },
+  "4": {
     "inputs": {
       "add_noise": "disable",
       "noise_seed": 0,
@@ -22,19 +51,19 @@
       "end_at_step": 4,
       "return_with_leftover_noise": "disable",
       "model": [
-        "103",
+        "6",
         0
       ],
       "positive": [
-        "98",
+        "17",
         0
       ],
       "negative": [
-        "98",
+        "17",
         1
       ],
       "latent_image": [
-        "86",
+        "14",
         0
       ]
     },
@@ -43,75 +72,33 @@
       "title": "KSampler (Advanced)"
     }
   },
-  "86": {
+  "5": {
     "inputs": {
-      "add_noise": "enable",
-      "noise_seed": 143480551749084,
-      "steps": 4,
-      "cfg": 1,
-      "sampler_name": "euler",
-      "scheduler": "simple",
-      "start_at_step": 0,
-      "end_at_step": 2,
-      "return_with_leftover_noise": "enable",
+      "shift": 5.000000000000001,
       "model": [
-        "104",
+        "9",
         0
-      ],
-      "positive": [
-        "98",
-        0
-      ],
-      "negative": [
-        "98",
-        1
-      ],
-      "latent_image": [
-        "98",
-        2
       ]
     },
-    "class_type": "KSamplerAdvanced",
+    "class_type": "ModelSamplingSD3",
     "_meta": {
-      "title": "KSampler (Advanced)"
+      "title": "ModelSamplingSD3"
     }
   },
-  "87": {
+  "6": {
     "inputs": {
-      "samples": [
-        "85",
-        0
-      ],
-      "vae": [
-        "90",
+      "shift": 5.000000000000001,
+      "model": [
+        "8",
         0
       ]
     },
-    "class_type": "VAEDecode",
+    "class_type": "ModelSamplingSD3",
     "_meta": {
-      "title": "VAE Decode"
+      "title": "ModelSamplingSD3"
     }
   },
-  "89": {
-    "inputs": {
-      "text": "low quality, blurry, haze, low contrast, overexposed, fade, moving perspective, extra limbs or hands",
-      "speak_and_recognation": {
-        "__value__": [
-          false,
-          true
-        ]
-      },
-      "clip": [
-        "84",
-        0
-      ]
-    },
-    "class_type": "CLIPTextEncode",
-    "_meta": {
-      "title": "CLIP Text Encode (Negative Prompt)"
-    }
-  },
-  "90": {
+  "7": {
     "inputs": {
       "vae_name": "wan_2.1_vae.safetensors"
     },
@@ -120,39 +107,46 @@
       "title": "Load VAE"
     }
   },
-  "93": {
+  "8": {
     "inputs": {
-      "text": "A nostalgic, high-quality vintage 35mm film shot from the 1970s. A mother and two young boys are playing in the shallow turquoise surf of a bright beach. The waves gently roll in and break into white foam around their feet. The mother looks at her children, the boy on the left watches the water intently, while the younger child in the middle bends down to splash in the waves. The sun creates shimmering glints on the water.",
-      "speak_and_recognation": {
-        "__value__": [
-          false,
-          true
-        ]
-      },
-      "clip": [
-        "84",
+      "lora_name": "wan2.2_i2v_lightx2v_4steps_lora_v1_low_noise.safetensors",
+      "strength_model": 1.1500000000000001,
+      "model": [
+        "16",
         0
       ]
     },
-    "class_type": "CLIPTextEncode",
+    "class_type": "LoraLoaderModelOnly",
     "_meta": {
-      "title": "CLIP Text Encode (Positive Prompt)"
+      "title": "LoraLoaderModelOnly"
     }
   },
-  "94": {
+  "9": {
     "inputs": {
-      "fps": 16,
-      "images": [
-        "87",
+      "lora_name": "wan2.2_i2v_lightx2v_4steps_lora_v1_low_noise.safetensors",
+      "strength_model": 1.1500000000000001,
+      "model": [
+        "11",
         0
       ]
     },
-    "class_type": "CreateVideo",
+    "class_type": "LoraLoaderModelOnly",
     "_meta": {
-      "title": "Create Video"
+      "title": "LoraLoaderModelOnly"
     }
   },
-  "95": {
+  "10": {
+    "inputs": {
+      "clip_name": "umt5_xxl_fp8_e4m3fn_scaled.safetensors",
+      "type": "wan",
+      "device": "default"
+    },
+    "class_type": "CLIPLoader",
+    "_meta": {
+      "title": "Load CLIP"
+    }
+  },
+  "11": {
     "inputs": {
       "unet_name": "wan2.2_i2v_low_noise_14B_fp8_scaled.safetensors",
       "weight_dtype": "fp8_e4m3fn"
@@ -162,7 +156,93 @@
       "title": "Load Diffusion Model"
     }
   },
-  "96": {
+  "12": {
+    "inputs": {
+      "text": "오른쪽 두 사람이 함께 분식집에서 떡볶이를 먹고 있는 장면 시대 배경은 1980년대 대한민국 서울",
+      "speak_and_recognation": {
+        "__value__": [
+          false,
+          true
+        ]
+      },
+      "clip": [
+        "10",
+        0
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode (Positive Prompt)"
+    }
+  },
+  "13": {
+    "inputs": {
+      "filename_prefix": "M2M/test02",
+      "format": "auto",
+      "codec": "auto",
+      "video": [
+        "3",
+        0
+      ]
+    },
+    "class_type": "SaveVideo",
+    "_meta": {
+      "title": "Save Video"
+    }
+  },
+  "14": {
+    "inputs": {
+      "add_noise": "enable",
+      "noise_seed": 123293847422586,
+      "steps": 4,
+      "cfg": 1,
+      "sampler_name": "euler",
+      "scheduler": "simple",
+      "start_at_step": 0,
+      "end_at_step": 2,
+      "return_with_leftover_noise": "enable",
+      "model": [
+        "5",
+        0
+      ],
+      "positive": [
+        "17",
+        0
+      ],
+      "negative": [
+        "17",
+        1
+      ],
+      "latent_image": [
+        "17",
+        2
+      ]
+    },
+    "class_type": "KSamplerAdvanced",
+    "_meta": {
+      "title": "KSampler (Advanced)"
+    }
+  },
+  "15": {
+    "inputs": {
+      "text": "low quality, blurry, haze, low contrast, overexposed, fade, moving perspective, extra limbs or hands, overlay pattern, double exposure, text, watermark, logo, typography",
+      "speak_and_recognation": {
+        "__value__": [
+          false,
+          true
+        ]
+      },
+      "clip": [
+        "10",
+        0
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode (Negative Prompt)"
+    }
+  },
+  "16": {
     "inputs": {
       "unet_name": "wan2.2_i2v_low_noise_14B_fp8_scaled.safetensors",
       "weight_dtype": "default"
@@ -172,35 +252,26 @@
       "title": "Load Diffusion Model"
     }
   },
-  "97": {
-    "inputs": {
-      "image": "istockphoto-611101364-612x612.jpg"
-    },
-    "class_type": "LoadImage",
-    "_meta": {
-      "title": "Load Image"
-    }
-  },
-  "98": {
+  "17": {
     "inputs": {
       "width": 640,
-      "height": 640,
-      "length": 161,
+      "height": 368,
+      "length": 121,
       "batch_size": 1,
       "positive": [
-        "93",
+        "12",
         0
       ],
       "negative": [
-        "89",
+        "15",
         0
       ],
       "vae": [
-        "90",
+        "7",
         0
       ],
       "start_image": [
-        "97",
+        "18",
         0
       ]
     },
@@ -209,73 +280,13 @@
       "title": "WanImageToVideo"
     }
   },
-  "103": {
+  "18": {
     "inputs": {
-      "shift": 5.000000000000001,
-      "model": [
-        "117",
-        0
-      ]
+      "image": "분식2.png"
     },
-    "class_type": "ModelSamplingSD3",
+    "class_type": "LoadImage",
     "_meta": {
-      "title": "ModelSamplingSD3"
-    }
-  },
-  "104": {
-    "inputs": {
-      "shift": 5.000000000000001,
-      "model": [
-        "116",
-        0
-      ]
-    },
-    "class_type": "ModelSamplingSD3",
-    "_meta": {
-      "title": "ModelSamplingSD3"
-    }
-  },
-  "108": {
-    "inputs": {
-      "filename_prefix": "M2M/test02",
-      "format": "auto",
-      "codec": "auto",
-      "video": [
-        "94",
-        0
-      ]
-    },
-    "class_type": "SaveVideo",
-    "_meta": {
-      "title": "Save Video"
-    }
-  },
-  "116": {
-    "inputs": {
-      "lora_name": "wan2.2_i2v_lightx2v_4steps_lora_v1_low_noise.safetensors",
-      "strength_model": 1.2000000000000002,
-      "model": [
-        "95",
-        0
-      ]
-    },
-    "class_type": "LoraLoaderModelOnly",
-    "_meta": {
-      "title": "LoraLoaderModelOnly"
-    }
-  },
-  "117": {
-    "inputs": {
-      "lora_name": "wan2.2_i2v_lightx2v_4steps_lora_v1_low_noise.safetensors",
-      "strength_model": 1.2000000000000002,
-      "model": [
-        "96",
-        0
-      ]
-    },
-    "class_type": "LoraLoaderModelOnly",
-    "_meta": {
-      "title": "LoraLoaderModelOnly"
+      "title": "Load Image"
     }
   }
 }

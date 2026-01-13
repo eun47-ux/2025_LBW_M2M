@@ -195,3 +195,16 @@ npm run dev
 - Python 스크립트 실행을 위해 Python이 PATH에 등록되어 있어야 합니다.
 - 이미지 생성 시 ComfyUI API 키가 필요합니다 (유료 토큰).
 - 비디오 합성 시 ffmpeg가 설치되어 있어야 합니다.
+
+---
+
+## 테스트용 파일
+- `source files/` - 테스트용 소스 파일들. 음성파일, 이미지
+
+## 사용되지 않는 폴더/파일
+
+다음 폴더와 파일들은 현재 프로젝트에서 사용되지 않습니다:
+
+- `backend copy/` - 백업 폴더
+- `frontend copy/` - 백업 폴더
+- `M2M_flask/` - Flask 서버 (Python 스크립트는 `backend/scripts/generate_image.py`로 이동됨)

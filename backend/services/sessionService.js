@@ -23,9 +23,11 @@ function findOriginalImage(sessionPath) {
   const candidates = [
     "original.jpg",
     "original.jpeg",
+    "original.jfif", // jfif도 지원
     "original.png",
     "photo.jpg",
     "photo.jpeg",
+    "photo.jfif", // jfif도 지원
     "photo.png",
   ];
 
@@ -115,7 +117,11 @@ export function updateSession(sessionId, { ownerId, labelMap, cropMetaArr, photo
   // 원본 이미지 저장
   let originalSavedName = null;
   if (photoFile) {
-    const ext = path.extname(photoFile.originalname || ".jpg") || ".jpg";
+    let ext = path.extname(photoFile.originalname || ".jpg") || ".jpg";
+    // jfif를 jpg로 변환 (jfif는 JPEG의 변형이므로)
+    if (ext.toLowerCase() === ".jfif") {
+      ext = ".jpg";
+    }
     const dst = path.join(sessionPath, `original${ext}`);
     fs.copyFileSync(photoFile.path, dst);
     originalSavedName = path.basename(dst);

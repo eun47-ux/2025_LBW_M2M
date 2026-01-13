@@ -156,7 +156,7 @@ export default function App() {
     setImageURL(url);
     setCropsSaved([]);
     setOwnerId(null);
-    setSessionId(null);
+    // setSessionId(null);
     setAudioFile(null);
     setAudioUploading(false);
     setAudioUploadProgress(0);
@@ -238,6 +238,7 @@ export default function App() {
    * - ownerId
    * - labelMap
    */
+  // 2단계 저장: 오리지널 이미지, 크롭 사진 업로드 + session.json 업데이트 + labels.json 생성
   const uploadSessionToBackend = async () => {
     if (!sessionId) {
       alert("먼저 세션 ID를 입력하고 확인 버튼을 클릭해주세요.");
@@ -250,18 +251,18 @@ export default function App() {
     }
 
     const form = new FormData();
-    form.append("photo", imageFile); // optional: original
+    form.append("photo", imageFile); // 오리지널 이미지
     form.append("ownerId", ownerId);
     form.append("labelMap", JSON.stringify(labelMap));
 
     cropsSaved.forEach((c, idx) => {
-      // create a filename that helps comfy/ui
+      // 크롭 파일들
       form.append("crops", c.blob, `crop_${idx + 1}.png`);
       form.append("cropMeta", JSON.stringify({ id: c.id, rect: c.rect })); // repeated fields are ok
     });
 
     try {
-      // 크롭 정보 업데이트
+      // 1. 오리지널 이미지, 크롭 사진 업로드 + session.json 업데이트
       const res = await fetch(`http://localhost:3001/api/session/${sessionId}/update-crops`, {
         method: "POST",
         body: form,
@@ -274,7 +275,7 @@ export default function App() {
         return;
       }
 
-      // labels.json 생성 (크롭 추출 + ComfyUI 업로드)
+      // 2. labels.json 생성 (크롭 추출 + ComfyUI 업로드)
       const labelsRes = await fetch(`http://localhost:3001/api/session/${sessionId}/build-labels`, {
         method: "POST",
       });
@@ -285,23 +286,30 @@ export default function App() {
         return;
       }
 
+      // 상태 초기화
       setSttPreview("");
       setScenesPreview(null);
       setRunImagesResults(null);
       setRunVideosResults(null);
       setFinalVideoPath("");
       setFinalVideoUrl("");
-      alert("저장 완료! 크롭 정보가 업로드되고 labels.json이 생성되었습니다.");
+      
+      alert("세션이 업데이트되었습니다! 오리지널 이미지, 크롭 사진이 업로드되고 session.json과 labels.json이 생성되었습니다.");
     } catch (e) {
       console.error(e);
       alert("저장 실패: " + (e?.message || String(e)));
     }
   };
 
-  // 세션 생성
+  // 세션 생성 (1단계: ID만 생성)
   const createSession = async () => {
     if (!sessionIdInput.trim()) {
       alert("세션 ID를 입력해주세요.");
+      return;
+    }
+
+    // 이미 세션이 있으면 생성하지 않음
+    if (sessionId) {
       return;
     }
 
@@ -318,7 +326,7 @@ export default function App() {
         return;
       }
       setSessionId(json.sessionId);
-      alert(`세션 생성 완료! sessionId=${json.sessionId}`);
+      // 팝업 제거 (한 번만 눌러도 되므로)
     } catch (e) {
       console.error(e);
       alert("세션 생성 실패: " + (e?.message || String(e)));
@@ -335,7 +343,7 @@ export default function App() {
       <div style={{ marginTop: 16, padding: 16, background: "#f9f9f9", borderRadius: 12, border: "2px solid #ddd" }}>
         <h3 style={{ margin: "0 0 12px 0", fontSize: 16 }}>1단계: 세션 ID 입력 (필수)</h3>
         <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-          <input
+        <input
             value={sessionIdInput}
             onChange={(e) => setSessionIdInput(e.target.value)}
             placeholder="세션 ID 입력 (예: test01)"
@@ -364,6 +372,8 @@ export default function App() {
         )}
       </div>
 
+      <hr style={{ margin: "20px 0" }} />
+
       {/* 2단계: 인물 크롭 + Owner 지정 */}
       <div style={{ marginTop: 24 }}>
         <h3 style={{ margin: "0 0 12px 0", fontSize: 16 }}>2단계: 인물 크롭 + Owner 지정</h3>
@@ -372,31 +382,217 @@ export default function App() {
             ⚠️ 먼저 세션 ID를 입력하고 확인 버튼을 클릭해주세요.
           </p>
         )}
-        <div style={{ display: "flex", gap: 16, flexWrap: "wrap", alignItems: "center" }}>
+        <div style={{ display: "flex", gap: 16, flexWrap: "wrap", alignItems: "center", marginBottom: 16 }}>
           <input type="file" accept="image/*" onChange={onSelectImage} disabled={!sessionId} />
-
-          <button
-            onClick={uploadSessionToBackend}
-            style={{
-              padding: "10px 12px",
-              borderRadius: 10,
-              border: "1px solid #ddd",
-              background: ownerId && sessionId ? "#111" : "#eee",
-              color: ownerId && sessionId ? "white" : "#777",
-              cursor: ownerId && sessionId ? "pointer" : "not-allowed",
-            }}
-            disabled={!ownerId || !sessionId}
-            title="크롭 저장 및 백엔드 업로드"
-          >
-            저장
-          </button>
         </div>
+
+        {/* Cropper */}
+        {imageURL && (
+          <div style={{ marginTop: 16, display: "grid", gridTemplateColumns: "1fr 360px", gap: 16 }}>
+            <div style={{ position: "relative", width: "100%", height: 520, background: "#111", borderRadius: 16, overflow: "hidden" }}>
+              <Cropper
+                image={imageURL}
+                crop={crop}
+                zoom={zoom}
+                aspect={aspect}
+                onCropChange={setCrop}
+                onZoomChange={setZoom}
+                onCropComplete={onCropComplete}
+                objectFit="contain"
+              />
+            </div>
+
+            <div>
+              <div style={{ padding: 12, border: "1px solid #eee", borderRadius: 16 }}>
+                <div style={{ fontWeight: 700, marginBottom: 8 }}>크롭 설정</div>
+
+                <label style={{ display: "block", marginBottom: 8 }}>
+                  Zoom: {zoom.toFixed(2)}
+                  <input
+                    type="range"
+                    min={1}
+                    max={4}
+                    step={0.01}
+                    value={zoom}
+                    onChange={(e) => setZoom(Number(e.target.value))}
+                    style={{ width: "100%" }}
+                  />
+                </label>
+
+                <label style={{ display: "block", marginBottom: 8 }}>
+                  Aspect:
+                  <select
+                    value={aspect}
+                    onChange={(e) => setAspect(Number(e.target.value))}
+                    style={{ width: "100%", padding: 8, borderRadius: 10, border: "1px solid #ddd" }}
+                  >
+                    <option value={1}>1:1 (정사각)</option>
+                    <option value={3 / 4}>3:4 (인물)</option>
+                    <option value={2 / 3}>2:3 (전신)</option>
+                    <option value={9 / 16}>9:16 (세로)</option>
+                  </select>
+                </label>
+
+                <button
+                  onClick={saveCurrentCrop}
+                  style={{
+                    width: "100%",
+                    padding: "10px 12px",
+                    borderRadius: 12,
+                    border: "1px solid #ddd",
+                    background: "#fff",
+                    cursor: "pointer",
+                    fontWeight: 700,
+                  }}
+                >
+                  ➕ 이 크롭 저장
+                </button>
+
+                <div style={{ marginTop: 10, fontSize: 12, color: "#666", lineHeight: 1.4 }}>
+                  저장 시 자동으로 <b>머리/어깨/옷</b>이 조금 더 포함되도록 여백을 추가합니다.
+                </div>
+              </div>
+
+              {/* Summary */}
+              <div style={{ marginTop: 12, padding: 12, border: "1px solid #eee", borderRadius: 16 }}>
+                <div style={{ fontWeight: 700 }}>현재 상태</div>
+                <div style={{ marginTop: 6, fontSize: 13, color: "#444" }}>
+                  저장된 크롭: <b>{cropsSaved.length}</b>개
+                  <br />
+                  Owner: <b>{ownerId ? `선택됨 (#${ownerLabel || "?"})` : "미선택"}</b>
+                </div>
+
+                {ownerId && (
+                  <pre style={{ marginTop: 10, background: "#f6f6f6", padding: 10, borderRadius: 12, fontSize: 12 }}>
+{JSON.stringify(
+  {
+    owner_label: ownerLabel,
+    label_map: labelMap,
+    crops_count: cropsSaved.length,
+  },
+  null,
+  2
+)}
+                  </pre>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Saved crops list */}
+        {cropsSaved.length > 0 && (
+          <div style={{ marginTop: 18 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <h3 style={{ margin: 0 }}>저장된 크롭</h3>
+              <div style={{ color: "#666", fontSize: 13 }}>
+                클릭해서 Owner로 지정 (라벨은 왼쪽부터 1,2,3...)
+              </div>
+            </div>
+
+            <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 10 }}>
+              {cropsSaved.map((c, idx) => {
+                const isOwner = c.id === ownerId;
+                const label = cropLabelById[c.id] || String(idx + 1);
+                return (
+                  <div
+                    key={c.id}
+                    style={{
+                      width: 160,
+                      border: isOwner ? "2px solid #ff3b30" : "1px solid #ddd",
+                      borderRadius: 14,
+                      overflow: "hidden",
+                      background: "#fff",
+                    }}
+                  >
+                    <div style={{ position: "relative" }}>
+                      <img src={c.previewUrl} alt={`crop-${idx}`} style={{ width: "100%", display: "block" }} />
+                      <div
+                        style={{
+                          position: "absolute",
+                          left: 8,
+                          top: 8,
+                          background: isOwner ? "#ff3b30" : "rgba(255,255,255,0.9)",
+                          color: isOwner ? "white" : "#111",
+                          padding: "4px 6px",
+                          borderRadius: 10,
+                          fontSize: 12,
+                          fontWeight: 800,
+                        }}
+                      >
+                        {isOwner ? `OWNER (#${label})` : `#${label}`}
+                      </div>
+                    </div>
+
+                    <div style={{ padding: 10, display: "flex", gap: 8 }}>
+                      <button
+                        onClick={() => setOwnerId(c.id)}
+                        style={{
+                          flex: 1,
+                          padding: "8px 10px",
+                          borderRadius: 10,
+                          border: "1px solid #ddd",
+                          background: isOwner ? "#111" : "#fff",
+                          color: isOwner ? "white" : "#111",
+                          cursor: "pointer",
+                          fontWeight: 700,
+                        }}
+                      >
+                        {isOwner ? "Owner" : "Owner로"}
+                      </button>
+                      <button
+                        onClick={() => removeCrop(c.id)}
+                        style={{
+                          padding: "8px 10px",
+                          borderRadius: 10,
+                          border: "1px solid #ddd",
+                          background: "#fff",
+                          cursor: "pointer",
+                        }}
+                        title="삭제"
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {!imageURL && (
+          <div style={{ marginTop: 24, padding: 16, border: "1px dashed #ddd", borderRadius: 16, color: "#666" }}>
+            먼저 사진을 업로드하세요. 그 다음 사람별로 크롭을 저장하고 Owner를 선택하면 됩니다.
+          </div>
+        )}
+
+        {/* 2단계 저장 버튼 - 크롭 인터페이스 아래 가로로 길게 */}
+        <button
+          onClick={uploadSessionToBackend}
+          style={{
+            width: "100%",
+            marginTop: 24,
+            padding: "14px 20px",
+            borderRadius: 12,
+            border: "1px solid #ddd",
+            background: ownerId && sessionId ? "#111" : "#eee",
+            color: ownerId && sessionId ? "white" : "#777",
+            cursor: ownerId && sessionId ? "pointer" : "not-allowed",
+            fontWeight: 700,
+            fontSize: 16,
+          }}
+          disabled={!ownerId || !sessionId}
+          title="크롭 저장 및 백엔드 업로드 (labels.json 생성)"
+        >
+          저장
+        </button>
       </div>
 
       <hr style={{ margin: "20px 0" }} />
 
       {/* 3단계: 오디오 업로드 + 씬 생성 */}
-      <div>
+      <div style={{ marginTop: 24 }}>
         <h3 style={{ margin: "0 0 12px 0", fontSize: 16 }}>3단계: 오디오 업로드 + 씬 생성</h3>
         <h4 style={{ margin: "8px 0", fontSize: 14, color: "#555" }}>🎙️ 대화 녹음 업로드</h4>
 
@@ -531,36 +727,38 @@ export default function App() {
       </button>
       </div>
 
+      <hr style={{ margin: "20px 0" }} />
+
       {/* 4단계: 영상 생성 */}
       <div style={{ marginTop: 24 }}>
         <h3 style={{ margin: "0 0 12px 0", fontSize: 16 }}>4단계: 영상 생성</h3>
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
-          <button
-            disabled={!sessionId || runImagesLoading || scenesLoading || sttLoading || audioUploading}
-            onClick={async () => {
-              setRunImagesLoading(true);
-              try {
-                const res = await fetch(`http://localhost:3001/api/session/${sessionId}/run-images`, {
-                  method: "POST",
-                });
-                const json = await res.json();
-                console.log("run-images:", json);
+      <button
+        disabled={!sessionId || runImagesLoading || scenesLoading || sttLoading || audioUploading}
+        onClick={async () => {
+          setRunImagesLoading(true);
+          try {
+            const res = await fetch(`http://localhost:3001/api/session/${sessionId}/run-images`, {
+              method: "POST",
+            });
+            const json = await res.json();
+            console.log("run-images:", json);
 
-                if (!json.ok) alert("이미지 생성 실패: " + (json.error || ""));
-                else {
-                  setRunImagesResults(json.results || []);
-                  setRunVideosResults(null);
-                  setFinalVideoPath("");
-                  setFinalVideoUrl("");
-                  alert("이미지 생성 완료!");
-                }
-              } catch (e) {
-                console.error(e);
-                alert("이미지 생성 실패: " + (e?.message || String(e)));
-              } finally {
-                setRunImagesLoading(false);
-              }
-            }}
+            if (!json.ok) alert("이미지 생성 실패: " + (json.error || ""));
+            else {
+              setRunImagesResults(json.results || []);
+              setRunVideosResults(null);
+              setFinalVideoPath("");
+              setFinalVideoUrl("");
+              alert("이미지 생성 완료!");
+            }
+          } catch (e) {
+            console.error(e);
+            alert("이미지 생성 실패: " + (e?.message || String(e)));
+          } finally {
+            setRunImagesLoading(false);
+          }
+        }}
             style={{
               padding: "10px 20px",
               borderRadius: 10,
@@ -568,35 +766,35 @@ export default function App() {
               background: "#111",
               color: "white",
             }}
-          >
-            {runImagesLoading ? "이미지 생성 중..." : "이미지 생성"}
-          </button>
+      >
+        {runImagesLoading ? "이미지 생성 중..." : "이미지 생성"}
+      </button>
 
-          <button
-            disabled={!sessionId || runVideosLoading || scenesLoading || sttLoading || audioUploading}
-            onClick={async () => {
-              setRunVideosLoading(true);
-              try {
-                const res = await fetch(`http://localhost:3001/api/session/${sessionId}/run-videos`, {
-                  method: "POST",
-                });
-                const json = await res.json();
-                console.log("run-videos:", json);
+      <button
+        disabled={!sessionId || runVideosLoading || scenesLoading || sttLoading || audioUploading}
+        onClick={async () => {
+          setRunVideosLoading(true);
+          try {
+            const res = await fetch(`http://localhost:3001/api/session/${sessionId}/run-videos`, {
+              method: "POST",
+            });
+            const json = await res.json();
+            console.log("run-videos:", json);
 
-                if (!json.ok) alert("영상 생성 실패: " + (json.error || ""));
-                else {
-                  setRunVideosResults(json.results || []);
-                  setFinalVideoPath("");
-                  setFinalVideoUrl("");
-                  alert("영상 생성 완료!");
-                }
-              } catch (e) {
-                console.error(e);
-                alert("영상 생성 실패: " + (e?.message || String(e)));
-              } finally {
-                setRunVideosLoading(false);
-              }
-            }}
+            if (!json.ok) alert("영상 생성 실패: " + (json.error || ""));
+            else {
+              setRunVideosResults(json.results || []);
+              setFinalVideoPath("");
+              setFinalVideoUrl("");
+              alert("영상 생성 완료!");
+            }
+          } catch (e) {
+            console.error(e);
+            alert("영상 생성 실패: " + (e?.message || String(e)));
+          } finally {
+            setRunVideosLoading(false);
+          }
+        }}
             style={{
               padding: "10px 20px",
               borderRadius: 10,
@@ -604,9 +802,9 @@ export default function App() {
               background: "#111",
               color: "white",
             }}
-          >
-            {runVideosLoading ? "영상 생성 중..." : "영상 생성"}
-          </button>
+      >
+        {runVideosLoading ? "영상 생성 중..." : "영상 생성"}
+      </button>
         </div>
       </div>
 
@@ -685,6 +883,52 @@ export default function App() {
             : runVideosLoading
             ? "비디오 생성 중..."
             : "P1 이미지 다운로드 + 비디오 생성 테스트"}
+        </button>
+      </div>
+
+      {/* 디버깅: P1 세션 영상 합치기 테스트 */}
+      <div style={{ marginTop: 24, padding: 16, background: "#d1ecf1", borderRadius: 12, border: "2px solid #0c5460" }}>
+        <h3 style={{ margin: "0 0 12px 0", fontSize: 16, color: "#0c5460" }}>🔧 디버깅: P1 세션 영상 합치기 테스트</h3>
+        <button
+          disabled={concatLoading}
+          onClick={async () => {
+            const testSessionId = "P1";
+            setConcatLoading(true);
+            try {
+              console.log("[DEBUG] 영상 합치기 시작...");
+              const res = await fetch(`http://localhost:3001/api/session/${testSessionId}/concat-videos`, {
+                method: "POST",
+              });
+              const json = await res.json();
+              console.log("디버깅 - concat-videos:", json);
+
+              if (!json.ok) {
+                alert("영상 합치기 실패: " + (json.error || ""));
+              } else {
+                setFinalVideoPath(json.finalPath || "");
+                setFinalVideoUrl(
+                  json.finalPath ? `http://localhost:3001/sessions/${testSessionId}/final.mp4` : ""
+                );
+                alert(`영상 합치기 완료! final.mp4 생성됨 (${json.count || 0}개 비디오)`);
+              }
+            } catch (e) {
+              console.error(e);
+              alert("영상 합치기 실패: " + (e?.message || String(e)));
+            } finally {
+              setConcatLoading(false);
+            }
+          }}
+          style={{
+            padding: "10px 20px",
+            borderRadius: 10,
+            border: "1px solid #0c5460",
+            background: "#0c5460",
+            color: "#fff",
+            fontWeight: "bold",
+            cursor: concatLoading ? "not-allowed" : "pointer",
+          }}
+        >
+          {concatLoading ? "영상 합치는 중..." : "P1 영상 합치기 테스트"}
         </button>
       </div>
 
@@ -899,186 +1143,6 @@ export default function App() {
         </>
       )}
 
-      {/* Cropper */}
-      {imageURL && (
-        <div style={{ marginTop: 16, display: "grid", gridTemplateColumns: "1fr 360px", gap: 16 }}>
-          <div style={{ position: "relative", width: "100%", height: 520, background: "#111", borderRadius: 16, overflow: "hidden" }}>
-            <Cropper
-              image={imageURL}
-              crop={crop}
-              zoom={zoom}
-              aspect={aspect}
-              onCropChange={setCrop}
-              onZoomChange={setZoom}
-              onCropComplete={onCropComplete}
-              objectFit="contain"
-            />
-          </div>
-
-          <div>
-            <div style={{ padding: 12, border: "1px solid #eee", borderRadius: 16 }}>
-              <div style={{ fontWeight: 700, marginBottom: 8 }}>크롭 설정</div>
-
-              <label style={{ display: "block", marginBottom: 8 }}>
-                Zoom: {zoom.toFixed(2)}
-                <input
-                  type="range"
-                  min={1}
-                  max={4}
-                  step={0.01}
-                  value={zoom}
-                  onChange={(e) => setZoom(Number(e.target.value))}
-                  style={{ width: "100%" }}
-                />
-              </label>
-
-              <label style={{ display: "block", marginBottom: 8 }}>
-                Aspect:
-                <select
-                  value={aspect}
-                  onChange={(e) => setAspect(Number(e.target.value))}
-                  style={{ width: "100%", padding: 8, borderRadius: 10, border: "1px solid #ddd" }}
-                >
-                  <option value={1}>1:1 (정사각)</option>
-                  <option value={3 / 4}>3:4 (인물)</option>
-                  <option value={2 / 3}>2:3 (전신)</option>
-                  <option value={9 / 16}>9:16 (세로)</option>
-                </select>
-              </label>
-
-              <button
-                onClick={saveCurrentCrop}
-                style={{
-                  width: "100%",
-                  padding: "10px 12px",
-                  borderRadius: 12,
-                  border: "1px solid #ddd",
-                  background: "#fff",
-                  cursor: "pointer",
-                  fontWeight: 700,
-                }}
-              >
-                ➕ 이 크롭 저장
-              </button>
-
-              <div style={{ marginTop: 10, fontSize: 12, color: "#666", lineHeight: 1.4 }}>
-                저장 시 자동으로 <b>머리/어깨/옷</b>이 조금 더 포함되도록 여백을 추가합니다.
-              </div>
-            </div>
-
-            {/* Summary */}
-            <div style={{ marginTop: 12, padding: 12, border: "1px solid #eee", borderRadius: 16 }}>
-              <div style={{ fontWeight: 700 }}>현재 상태</div>
-              <div style={{ marginTop: 6, fontSize: 13, color: "#444" }}>
-                저장된 크롭: <b>{cropsSaved.length}</b>개
-                <br />
-                Owner: <b>{ownerId ? `선택됨 (#${ownerLabel || "?"})` : "미선택"}</b>
-              </div>
-
-              {ownerId && (
-                <pre style={{ marginTop: 10, background: "#f6f6f6", padding: 10, borderRadius: 12, fontSize: 12 }}>
-{JSON.stringify(
-  {
-    owner_label: ownerLabel,
-    label_map: labelMap,
-    crops_count: cropsSaved.length,
-  },
-  null,
-  2
-)}
-                </pre>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Saved crops list */}
-      {cropsSaved.length > 0 && (
-        <div style={{ marginTop: 18 }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <h3 style={{ margin: 0 }}>저장된 크롭</h3>
-            <div style={{ color: "#666", fontSize: 13 }}>
-              클릭해서 Owner로 지정 (라벨은 왼쪽부터 1,2,3...)
-            </div>
-          </div>
-
-          <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 10 }}>
-            {cropsSaved.map((c, idx) => {
-              const isOwner = c.id === ownerId;
-              const label = cropLabelById[c.id] || String(idx + 1);
-              return (
-                <div
-                  key={c.id}
-                  style={{
-                    width: 160,
-                    border: isOwner ? "2px solid #ff3b30" : "1px solid #ddd",
-                    borderRadius: 14,
-                    overflow: "hidden",
-                    background: "#fff",
-                  }}
-                >
-                  <div style={{ position: "relative" }}>
-                    <img src={c.previewUrl} alt={`crop-${idx}`} style={{ width: "100%", display: "block" }} />
-                      <div
-                        style={{
-                          position: "absolute",
-                          left: 8,
-                          top: 8,
-                          background: isOwner ? "#ff3b30" : "rgba(255,255,255,0.9)",
-                          color: isOwner ? "white" : "#111",
-                          padding: "4px 6px",
-                          borderRadius: 10,
-                          fontSize: 12,
-                          fontWeight: 800,
-                        }}
-                      >
-                      {isOwner ? `OWNER (#${label})` : `#${label}`}
-                    </div>
-                  </div>
-
-                  <div style={{ padding: 10, display: "flex", gap: 8 }}>
-                    <button
-                      onClick={() => setOwnerId(c.id)}
-                      style={{
-                        flex: 1,
-                        padding: "8px 10px",
-                        borderRadius: 10,
-                        border: "1px solid #ddd",
-                        background: isOwner ? "#111" : "#fff",
-                        color: isOwner ? "white" : "#111",
-                        cursor: "pointer",
-                        fontWeight: 700,
-                      }}
-                    >
-                      {isOwner ? "Owner" : "Owner로"}
-                    </button>
-                    <button
-                      onClick={() => removeCrop(c.id)}
-                      style={{
-                        padding: "8px 10px",
-                        borderRadius: 10,
-                        border: "1px solid #ddd",
-                        background: "#fff",
-                        cursor: "pointer",
-                      }}
-                      title="삭제"
-                    >
-                      🗑️
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {!imageURL && (
-        <div style={{ marginTop: 24, padding: 16, border: "1px dashed #ddd", borderRadius: 16, color: "#666" }}>
-          먼저 사진을 업로드하세요. 그 다음 사람별로 크롭을 저장하고 Owner를 선택하면 됩니다.
-        </div>
-      )}
     </div>
   );
 }

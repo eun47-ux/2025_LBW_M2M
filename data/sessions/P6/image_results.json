@@ -1,0 +1,62 @@
+[
+  {
+    "scene_id": "21_01",
+    "pair": [
+      "2",
+      "1"
+    ],
+    "prompt_text": "1990년대 한국 친구와 함께 용문산 계곡 근처에서 시예버스를 타고 자리를 잡고 있다.",
+    "image_prompt_id": "16a0265b-8290-46ec-b11c-ba9e105fbf92",
+    "image_path": "D:\\2025_LBW_M2M\\data\\sessions\\P6\\images\\21_01.png"
+  },
+  {
+    "scene_id": "21_02",
+    "pair": [
+      "2",
+      "1"
+    ],
+    "prompt_text": "1990년대 한국 친구와 함께 노래방에서 노래를 부르고 있다.",
+    "image_prompt_id": "615c9849-01c5-4447-a4a0-0ab13935993d",
+    "image_path": "D:\\2025_LBW_M2M\\data\\sessions\\P6\\images\\21_02.png"
+  },
+  {
+    "scene_id": "23_01",
+    "pair": [
+      "2",
+      "3"
+    ],
+    "prompt_text": "1990년대 한국 친구와 함께 500냥 하우스에서 쫄면과 떡볶이, 김밥을 먹고 경양식집에서 돈까스와 주스를 마시고 있다.",
+    "image_prompt_id": "c4232a7d-6593-4e56-ad1d-403344f4b87e",
+    "image_path": "D:\\2025_LBW_M2M\\data\\sessions\\P6\\images\\23_01.png"
+  },
+  {
+    "scene_id": "23_02",
+    "pair": [
+      "2",
+      "3"
+    ],
+    "prompt_text": "1990년대 한국 친구와 함께 부대찌개 집에서 부대찌개를 먹고 있다.",
+    "image_prompt_id": "df73c076-74c9-44d8-8d74-8b1462976377",
+    "image_path": "D:\\2025_LBW_M2M\\data\\sessions\\P6\\images\\23_02.png"
+  },
+  {
+    "scene_id": "24_01",
+    "pair": [
+      "2",
+      "4"
+    ],
+    "prompt_text": "1990년대 한국 친구와 함께 책 읽는 동아리에서 독서토론을 준비하며 책을 읽고 있다.",
+    "image_prompt_id": "37e3e077-3d59-4a53-9a25-ada5ecf34cce",
+    "image_path": "D:\\2025_LBW_M2M\\data\\sessions\\P6\\images\\24_01.png"
+  },
+  {
+    "scene_id": "24_02",
+    "pair": [
+      "2",
+      "4"
+    ],
+    "prompt_text": "1990년대 한국 친구와 함께 카페에서 담배를 피우는 여자애들을 보며 있다.",
+    "image_prompt_id": "cec6352e-b7f7-4316-b0b4-abfc8a763c40",
+    "image_path": "D:\\2025_LBW_M2M\\data\\sessions\\P6\\images\\24_02.png"
+  }
+]
