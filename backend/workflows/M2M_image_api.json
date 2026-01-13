@@ -1,0 +1,150 @@
+{
+  "1": {
+    "inputs": {
+      "temperature": 0.5,
+      "modalities": "image+text",
+      "aspect_ratio": "auto"
+    },
+    "class_type": "AV_NanoBananaApiConfig",
+    "_meta": {
+      "title": "NanoBanana API Config"
+    }
+  },
+  "4": {
+    "inputs": {
+      "prompt": "오른쪽 두 사람이 함께 분식집에서 떡볶이를 먹고 있는 장면 사진처럼 생성해줘. 시대 배경은 1980년대 대한민국 서울",
+      "model": "gemini-2.5-flash-image",
+      "seed": 771312265444046,
+      "aspect_ratio": "16:9",
+      "response_modalities": "IMAGE+TEXT",
+      "system_prompt": "You are an expert image-generation engine. You must ALWAYS produce an image.\nInterpret all user input—regardless of format, intent, or abstraction—as literal visual directives for image composition.\nIf a prompt is conversational or lacks specific visual details, you must creatively invent a concrete visual scenario that depicts the concept.\nPrioritize generating the visual representation above any text, formatting, or conversational requests.",
+      "speak_and_recognation": {
+        "__value__": [
+          false,
+          true
+        ]
+      },
+      "images": [
+        "12",
+        0
+      ]
+    },
+    "class_type": "GeminiImageNode",
+    "_meta": {
+      "title": "Nano Banana (Google Gemini Image)"
+    }
+  },
+  "6": {
+    "inputs": {
+      "images": [
+        "17",
+        0
+      ]
+    },
+    "class_type": "PreviewImage",
+    "_meta": {
+      "title": "Preview Image"
+    }
+  },
+  "12": {
+    "inputs": {
+      "images_a": [
+        "15",
+        0
+      ],
+      "images_b": [
+        "16",
+        0
+      ]
+    },
+    "class_type": "Image Batch",
+    "_meta": {
+      "title": "Image Batch"
+    }
+  },
+  "13": {
+    "inputs": {
+      "image": "crop_01.png"
+    },
+    "class_type": "LoadImage",
+    "_meta": {
+      "title": "Load Image"
+    }
+  },
+  "14": {
+    "inputs": {
+      "image": "crop_02.png"
+    },
+    "class_type": "LoadImage",
+    "_meta": {
+      "title": "Load Image"
+    }
+  },
+  "15": {
+    "inputs": {
+      "mode": "resize",
+      "supersample": "true",
+      "resampling": "lanczos",
+      "rescale_factor": 2,
+      "resize_width": 512,
+      "resize_height": 768,
+      "image": [
+        "13",
+        0
+      ]
+    },
+    "class_type": "Image Resize",
+    "_meta": {
+      "title": "Image Resize"
+    }
+  },
+  "16": {
+    "inputs": {
+      "mode": "resize",
+      "supersample": "true",
+      "resampling": "lanczos",
+      "rescale_factor": 2,
+      "resize_width": 512,
+      "resize_height": 768,
+      "image": [
+        "14",
+        0
+      ]
+    },
+    "class_type": "Image Resize",
+    "_meta": {
+      "title": "Image Resize"
+    }
+  },
+  "17": {
+    "inputs": {
+      "mode": "resize",
+      "supersample": "true",
+      "resampling": "lanczos",
+      "rescale_factor": 2,
+      "resize_width": 1920,
+      "resize_height": 1080,
+      "image": [
+        "4",
+        0
+      ]
+    },
+    "class_type": "Image Resize",
+    "_meta": {
+      "title": "Image Resize"
+    }
+  },
+  "19": {
+    "inputs": {
+      "filename_prefix": "ComfyUI",
+      "images": [
+        "17",
+        0
+      ]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "Save Image"
+    }
+  }
+}
