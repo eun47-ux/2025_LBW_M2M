@@ -84,14 +84,19 @@ export async function concatVideos(sessionId) {
       continue;
     }
 
-    // ComfyUI에서 다운로드
-    const videos = await waitForVideoOutput(COMFY_URL, promptId, 300000);
-    if (!videos.length) {
-      console.warn(`⚠️ No video output found for prompt ${promptId}`);
-      continue;
+    // ComfyUI에서 비디오 정보 가져오기 (이미 생성 완료된 경우 comfy_video 사용, 아니면 history에서 조회)
+    let videoInfo = item.comfy_video;
+    if (!videoInfo) {
+      // comfy_video가 없으면 history에서 조회
+      const videos = await waitForVideoOutput(COMFY_URL, promptId, 300000);
+      if (!videos.length) {
+        console.warn(`⚠️ No video output found for prompt ${promptId}`);
+        continue;
+      }
+      videoInfo = videos[0];
     }
 
-    const videoInfo = videos[0];
+    // 비디오 다운로드
     const filename = safeSceneFilename(item.scene_id, promptId);
     const localPath = path.join(videosDir, filename);
 

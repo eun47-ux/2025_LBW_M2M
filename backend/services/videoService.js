@@ -133,21 +133,14 @@ export async function runVideoScenes(sessionId) {
         throw new Error(`Video run missing prompt_id for scene ${item.scene_id}`);
       }
 
-      // ComfyUI 결과 대기
+      // ComfyUI 결과 대기 (다운로드는 하지 않음, 합치기 시 다운로드)
       const videos = await waitForVideoOutput(COMFY_URL, videoPromptId, 900000);
       if (!videos.length) {
         throw new Error(`No video output for scene ${item.scene_id} (prompt ${videoPromptId})`);
       }
 
-      // 비디오 다운로드
+      // 비디오 정보만 저장 (다운로드는 영상 합치기 시 수행)
       const videoInfo = videos[0];
-      const localVideoPath = path.join(videosDir, `${item.scene_id}.mp4`);
-
-      if (COMFY_STATIC_BASE) {
-        await downloadComfyStaticFile(COMFY_STATIC_BASE, videoInfo, localVideoPath);
-      } else {
-        await downloadComfyFile(COMFY_URL, videoInfo, localVideoPath);
-      }
 
       results.push({
         scene_id: item.scene_id,
@@ -156,11 +149,10 @@ export async function runVideoScenes(sessionId) {
         image_prompt_id: imageResult?.image_prompt_id,
         video_prompt_id: videoPromptId,
         image_path: imagePath,
-        video_path: localVideoPath,
-        comfy_video: videoInfo,
+        comfy_video: videoInfo, // 다운로드 정보만 저장
       });
 
-      console.log(`✅ video ${item.scene_id} → ${videoPromptId} (downloaded)`);
+      console.log(`✅ video ${item.scene_id} → ${videoPromptId} (generated, will download on concat)`);
     } catch (err) {
       const message = err?.message || String(err);
       console.warn(`⚠️ video failed for scene ${item.scene_id}: ${message}`);
