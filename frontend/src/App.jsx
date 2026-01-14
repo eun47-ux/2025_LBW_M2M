@@ -85,6 +85,124 @@ function assignLabelsLeftToRight(crops) {
   return labels;
 }
 
+// ---- YouTube music helpers (final.mp4 sync) ----
+function parseYoutubeId(input) {
+  if (!input) return "";
+  try {
+    const url = new URL(input.trim());
+    const host = url.hostname.replace(/^www\./, "");
+
+    if (host === "youtu.be") {
+      return url.pathname.split("/")[1] || "";
+    }
+
+    if (host.endsWith("youtube.com")) {
+      if (url.searchParams.get("v")) return url.searchParams.get("v");
+      const parts = url.pathname.split("/").filter(Boolean);
+      const embedIdx = parts.indexOf("embed");
+      const shortsIdx = parts.indexOf("shorts");
+      if (embedIdx >= 0 && parts[embedIdx + 1]) return parts[embedIdx + 1];
+      if (shortsIdx >= 0 && parts[shortsIdx + 1]) return parts[shortsIdx + 1];
+    }
+  } catch {
+    return "";
+  }
+  return "";
+}
+
+let ytApiPromise = null;
+const YT_START_SECONDS = 45;
+const FADE_DURATION_MS = 500; // 0.5초
+
+/**
+ * YouTube 오디오 페이드 인 (0 -> 100)
+ */
+function fadeInYouTube(player, onComplete) {
+  if (!player) return;
+  
+  // 기존 페이드 중단
+  if (window.ytFadeInterval) {
+    clearInterval(window.ytFadeInterval);
+  }
+  
+  player.setVolume(0);
+  let volume = 0;
+  const steps = 20; // 20단계로 나눔
+  const stepSize = 100 / steps;
+  const stepDuration = FADE_DURATION_MS / steps;
+  
+  window.ytFadeInterval = setInterval(() => {
+    volume += stepSize;
+    if (volume >= 100) {
+      volume = 100;
+      player.setVolume(100);
+      if (window.ytFadeInterval) {
+        clearInterval(window.ytFadeInterval);
+        window.ytFadeInterval = null;
+      }
+      if (onComplete) onComplete();
+    } else {
+      player.setVolume(Math.round(volume));
+    }
+  }, stepDuration);
+}
+
+/**
+ * YouTube 오디오 페이드 아웃 (100 -> 0)
+ */
+function fadeOutYouTube(player, onComplete) {
+  if (!player) return;
+  
+  // 기존 페이드 중단
+  if (window.ytFadeInterval) {
+    clearInterval(window.ytFadeInterval);
+  }
+  
+  let volume = 100;
+  const steps = 20; // 20단계로 나눔
+  const stepSize = 100 / steps;
+  const stepDuration = FADE_DURATION_MS / steps;
+  
+  window.ytFadeInterval = setInterval(() => {
+    volume -= stepSize;
+    if (volume <= 0) {
+      volume = 0;
+      player.setVolume(0);
+      if (window.ytFadeInterval) {
+        clearInterval(window.ytFadeInterval);
+        window.ytFadeInterval = null;
+      }
+      if (onComplete) onComplete();
+    } else {
+      player.setVolume(Math.round(volume));
+    }
+  }, stepDuration);
+}
+
+function loadYoutubeApi() {
+  if (ytApiPromise) return ytApiPromise;
+  ytApiPromise = new Promise((resolve) => {
+    if (window.YT && window.YT.Player) {
+      resolve(window.YT);
+      return;
+    }
+    const existing = document.querySelector('script[src="https://www.youtube.com/iframe_api"]');
+    if (existing) {
+      const prev = window.onYouTubeIframeAPIReady;
+      window.onYouTubeIframeAPIReady = () => {
+        if (prev) prev();
+        resolve(window.YT);
+      };
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = "https://www.youtube.com/iframe_api";
+    document.body.appendChild(script);
+    window.onYouTubeIframeAPIReady = () => resolve(window.YT);
+  });
+  return ytApiPromise;
+}
+
 export default function App() {
   // image
   const [imageFile, setImageFile] = useState(null);
@@ -120,6 +238,18 @@ export default function App() {
   const [concatLoading, setConcatLoading] = useState(false);
   const [finalVideoPath, setFinalVideoPath] = useState("");
   const [finalVideoUrl, setFinalVideoUrl] = useState("");
+  // ---- YouTube music state (synced with final.mp4) ----
+  const finalVideoRef = useRef(null);
+  const ytPlayerRef = useRef(null);
+  const ytReadyRef = useRef(false);
+  const ytHasStartedRef = useRef(false);
+  const ytPendingPlayRef = useRef(false);
+  const ytFadeIntervalRef = useRef(null);
+  const ytContainerIdRef = useRef(`yt-music-${Math.random().toString(36).slice(2, 10)}`);
+  const [ytUrlInput, setYtUrlInput] = useState("");
+  const [ytVideoId, setYtVideoId] = useState("");
+  const [ytStatus, setYtStatus] = useState("idle");
+  const [ytError, setYtError] = useState("");
   const [playlistLoading, setPlaylistLoading] = useState(false);
   const [playlistItems, setPlaylistItems] = useState([]);
   const [playlistIndex, setPlaylistIndex] = useState(0);
@@ -134,6 +264,183 @@ export default function App() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // ---- Sync final.mp4 play/pause with YouTube audio ----
+  useEffect(() => {
+    const video = finalVideoRef.current;
+    if (!video) return undefined;
+
+    const handlePlay = () => {
+      if (!ytPlayerRef.current) return;
+      if (!ytReadyRef.current) {
+        ytPendingPlayRef.current = true;
+        return;
+      }
+      // 페이드 상태 리셋
+      ytFadeIntervalRef.current = null;
+      if (!ytHasStartedRef.current) {
+        ytPlayerRef.current.seekTo(YT_START_SECONDS, true);
+        ytHasStartedRef.current = true;
+      }
+      // 페이드 인과 함께 재생
+      ytPlayerRef.current.playVideo();
+      fadeInYouTube(ytPlayerRef.current);
+    };
+    const handlePause = () => {
+      if (!ytPlayerRef.current || !ytReadyRef.current) return;
+      // 페이드 아웃 후 일시정지
+      fadeOutYouTube(ytPlayerRef.current, () => {
+        if (ytPlayerRef.current && ytReadyRef.current) {
+          ytPlayerRef.current.pauseVideo();
+        }
+      });
+    };
+    const handleEnded = () => {
+      if (!ytPlayerRef.current || !ytReadyRef.current) return;
+      // 페이드 상태 리셋
+      ytFadeIntervalRef.current = null;
+      // 페이드 아웃 후 초기화
+      fadeOutYouTube(ytPlayerRef.current, () => {
+        if (ytPlayerRef.current && ytReadyRef.current) {
+          ytPlayerRef.current.pauseVideo();
+          ytPlayerRef.current.seekTo(YT_START_SECONDS, true);
+        }
+      });
+    };
+    
+    // 비디오 종료 0.5초 전에 페이드 아웃 시작
+    const handleTimeUpdate = () => {
+      if (!ytPlayerRef.current || !ytReadyRef.current) return;
+      if (!video.duration) return;
+      
+      const remaining = video.duration - video.currentTime;
+      if (remaining <= FADE_DURATION_MS / 1000 && remaining > 0.1) {
+        // 페이드 아웃 시작 (한 번만)
+        if (!ytFadeIntervalRef.current) {
+          fadeOutYouTube(ytPlayerRef.current);
+          ytFadeIntervalRef.current = true;
+        }
+      }
+    };
+
+    video.addEventListener("play", handlePlay);
+    video.addEventListener("pause", handlePause);
+    video.addEventListener("ended", handleEnded);
+    video.addEventListener("timeupdate", handleTimeUpdate);
+
+    return () => {
+      video.removeEventListener("play", handlePlay);
+      video.removeEventListener("pause", handlePause);
+      video.removeEventListener("ended", handleEnded);
+      video.removeEventListener("timeupdate", handleTimeUpdate);
+      // 페이드 인터벌 정리
+      if (window.ytFadeInterval) {
+        clearInterval(window.ytFadeInterval);
+        window.ytFadeInterval = null;
+      }
+    };
+  }, [finalVideoUrl]);
+
+  // ---- Load/attach YouTube player when a URL is applied ----
+  useEffect(() => {
+    if (!ytVideoId) return;
+
+    let cancelled = false;
+    let timeoutId = null;
+    setYtStatus("loading");
+    setYtError("");
+    ytHasStartedRef.current = false;
+    ytPendingPlayRef.current = false;
+    ytFadeIntervalRef.current = null;
+
+    loadYoutubeApi().then((YT) => {
+      if (cancelled) return;
+
+      const onReady = () => {
+        ytReadyRef.current = true;
+        setYtStatus("ready");
+        // 초기 볼륨을 0으로 설정 (페이드 인을 위해)
+        if (ytPlayerRef.current) {
+          ytPlayerRef.current.setVolume(0);
+        }
+        if (timeoutId) clearTimeout(timeoutId);
+        if (ytPendingPlayRef.current) {
+          if (!ytHasStartedRef.current) {
+            ytPlayerRef.current?.seekTo(YT_START_SECONDS, true);
+            ytHasStartedRef.current = true;
+          }
+          ytPlayerRef.current?.playVideo();
+          fadeInYouTube(ytPlayerRef.current);
+          ytPendingPlayRef.current = false;
+        }
+      };
+
+      if (ytPlayerRef.current) {
+        if (ytReadyRef.current) {
+          ytPlayerRef.current.cueVideoById({
+            videoId: ytVideoId,
+            startSeconds: YT_START_SECONDS,
+          });
+          ytHasStartedRef.current = false;
+          setYtStatus("ready");
+          if (timeoutId) clearTimeout(timeoutId);
+        } else {
+          setYtStatus("loading");
+        }
+        return;
+      }
+
+      const container = document.getElementById(ytContainerIdRef.current);
+      if (!container) {
+        setYtStatus("error");
+        setYtError("유튜브 플레이어 영역을 찾을 수 없어요.");
+        return;
+      }
+
+      ytPlayerRef.current = new YT.Player(ytContainerIdRef.current, {
+        videoId: ytVideoId,
+        playerVars: {
+          autoplay: 0,
+          controls: 0,
+          disablekb: 1,
+          modestbranding: 1,
+          playsinline: 1,
+          rel: 0,
+          enablejsapi: 1,
+          origin: window.location.origin,
+          start: YT_START_SECONDS,
+        },
+        events: { onReady },
+      });
+    });
+
+    timeoutId = setTimeout(() => {
+      if (cancelled || ytReadyRef.current) return;
+      setYtStatus("error");
+      setYtError("유튜브 로딩 실패. 링크를 확인하거나 네트워크를 점검하세요.");
+    }, 15000);
+
+    return () => {
+      cancelled = true;
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [ytVideoId]);
+
+  useEffect(() => {
+    if (finalVideoPath) return;
+    if (ytPlayerRef.current) {
+      // 페이드 인터벌 정리
+      if (window.ytFadeInterval) {
+        clearInterval(window.ytFadeInterval);
+        window.ytFadeInterval = null;
+      }
+      ytFadeIntervalRef.current = null;
+      ytPlayerRef.current.destroy();
+      ytPlayerRef.current = null;
+      ytReadyRef.current = false;
+      setYtStatus("idle");
+    }
+  }, [finalVideoPath]);
 
   useEffect(() => {
     if (!playlistItems.length) return;
@@ -1081,10 +1388,201 @@ export default function App() {
               >
                 final.mp4 다운로드
               </a>
+              {/* Custom playback controls (syncs with YouTube audio) */}
+              <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8 }}>
+                <button
+                  disabled={!ytVideoId}
+                  onClick={() => {
+                    const v = finalVideoRef.current;
+                    if (!v) return;
+                    v.play().catch(() => {});
+                    if (ytPlayerRef.current && ytReadyRef.current) {
+                      if (!ytHasStartedRef.current) {
+                        ytPlayerRef.current.seekTo(YT_START_SECONDS, true);
+                        ytHasStartedRef.current = true;
+                      }
+                      ytPlayerRef.current.playVideo();
+                      fadeInYouTube(ytPlayerRef.current);
+                    } else if (ytPlayerRef.current) {
+                      ytPendingPlayRef.current = true;
+                    }
+                  }}
+                  style={{
+                    width: 36,
+                    height: 36,
+                    padding: 0,
+                    borderRadius: "50%",
+                    border: "1px solid #ddd",
+                    background: "#111",
+                    color: "#fff",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    opacity: ytVideoId ? 1 : 0.5,
+                  }}
+                  title="재생"
+                  aria-label="재생"
+                >
+                  <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                    <path d="M8 5v14l11-7z" fill="currentColor" />
+                  </svg>
+                </button>
+                <button
+                  disabled={!ytVideoId}
+                  onClick={() => {
+                    const v = finalVideoRef.current;
+                    if (!v) return;
+                    v.pause();
+                    if (ytPlayerRef.current && ytReadyRef.current) {
+                      fadeOutYouTube(ytPlayerRef.current, () => {
+                        if (ytPlayerRef.current && ytReadyRef.current) {
+                          ytPlayerRef.current.pauseVideo();
+                        }
+                      });
+                    }
+                  }}
+                  style={{
+                    width: 36,
+                    height: 36,
+                    padding: 0,
+                    borderRadius: "50%",
+                    border: "1px solid #ddd",
+                    background: "#fff",
+                    color: "#111",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    opacity: ytVideoId ? 1 : 0.5,
+                  }}
+                  title="일시정지"
+                  aria-label="일시정지"
+                >
+                  <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                    <path d="M6 5h4v14H6zM14 5h4v14h-4z" fill="currentColor" />
+                  </svg>
+                </button>
+                <button
+                  disabled={!ytVideoId}
+                  onClick={() => {
+                    const v = finalVideoRef.current;
+                    if (!v) return;
+                    v.currentTime = 0;
+                    ytFadeIntervalRef.current = null; // 페이드 상태 리셋
+                    v.play().catch(() => {});
+                    if (ytPlayerRef.current && ytReadyRef.current) {
+                      ytPlayerRef.current.seekTo(YT_START_SECONDS, true);
+                      ytHasStartedRef.current = true;
+                      ytPlayerRef.current.playVideo();
+                      fadeInYouTube(ytPlayerRef.current);
+                    } else if (ytPlayerRef.current) {
+                      ytPendingPlayRef.current = true;
+                    }
+                  }}
+                  style={{
+                    width: 36,
+                    height: 36,
+                    padding: 0,
+                    borderRadius: "50%",
+                    border: "1px solid #ddd",
+                    background: "#fff",
+                    color: "#111",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    opacity: ytVideoId ? 1 : 0.5,
+                  }}
+                  title="처음부터"
+                  aria-label="처음부터"
+                >
+                  <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                    <path d="M6 5h2v14H6zM9 12l9-7v14z" fill="currentColor" />
+                  </svg>
+                </button>
+              </div>
+              {!ytVideoId && (
+                <div style={{ marginTop: 6, fontSize: 11, color: "#888" }}>
+                  음악 링크를 적용한 뒤에 영상 재생이 가능해요.
+                </div>
+              )}
+              {/* YouTube URL input (only after final.mp4 is rendered) */}
+              <div
+                style={{
+                  marginTop: 12,
+                  padding: 12,
+                  border: "1px solid #eee",
+                  borderRadius: 12,
+                }}
+              >
+                <div style={{ fontWeight: 700, fontSize: 12, marginBottom: 6 }}>
+                  🎵 추억 노래 (YouTube)
+                </div>
+                <div style={{ fontSize: 11, color: "#888", marginBottom: 6 }}>
+                  음악은 45초부터 재생돼요. (페이드 인/아웃 0.5초)
+                </div>
+                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  <input
+                    type="text"
+                    value={ytUrlInput}
+                    onChange={(e) => setYtUrlInput(e.target.value)}
+                    placeholder="유튜브 링크 붙여넣기"
+                    style={{
+                      flex: 1,
+                      padding: "8px 10px",
+                      borderRadius: 8,
+                      border: "1px solid #ddd",
+                      fontSize: 12,
+                    }}
+                  />
+                  <button
+                    onClick={() => {
+                      const id = parseYoutubeId(ytUrlInput);
+                      if (!id) {
+                        setYtError("유효한 유튜브 링크가 아니에요.");
+                        return;
+                      }
+                      setYtVideoId(id);
+                      setYtError("");
+                    }}
+                    style={{
+                      padding: "8px 12px",
+                      borderRadius: 8,
+                      border: "1px solid #ddd",
+                      background: "#111",
+                      color: "#fff",
+                      fontSize: 12,
+                      fontWeight: 700,
+                      cursor: "pointer",
+                    }}
+                  >
+                    적용
+                  </button>
+                </div>
+                {ytError && (
+                  <div style={{ marginTop: 6, fontSize: 11, color: "#b00020" }}>
+                    {ytError}
+                  </div>
+                )}
+                {ytVideoId && (
+                  <div style={{ marginTop: 6, fontSize: 11, color: "#666" }}>
+                    상태: {ytStatus === "ready" ? "연결됨" : ytStatus === "error" ? "오류" : "로딩 중"}
+                  </div>
+                )}
+                {/* Hidden YouTube player (audio only) */}
+                <div
+                  id={ytContainerIdRef.current}
+                  style={{ width: 1, height: 1, opacity: 0, pointerEvents: "none" }}
+                />
+              </div>
               <video
                 src={finalVideoUrl}
-                controls
-                style={{ marginTop: 8, width: "100%", maxWidth: 640, borderRadius: 12 }}
+                ref={finalVideoRef}
+                onPlay={() => {
+                  if (ytVideoId) return;
+                  const v = finalVideoRef.current;
+                  if (!v) return;
+                  v.pause();
+                }}
+                style={{ marginTop: 12, width: "100%", maxWidth: 640, borderRadius: 12 }}
               />
             </>
           )}
