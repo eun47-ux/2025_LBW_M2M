@@ -1,0 +1,98 @@
+[
+  {
+    "scene_id": "41_01",
+    "pair": [
+      "4",
+      "1"
+    ],
+    "prompt_text": "1990년대 한국 친구와 함께 노래방에서 노래를 부르고 있다.",
+    "image_prompt_id": "fdefc4ba-0f9e-4652-a549-8e15d4d32aa4",
+    "video_prompt_id": "ee54f5c0-508d-4b21-8eb8-23c3180ac011",
+    "image_path": "D:\\2025_LBW_M2M\\data\\sessions\\TEST01\\images\\41_01.png",
+    "comfy_video": {
+      "filename": "41_01_00001_.mp4",
+      "subfolder": "M2M\\TEST04\\videos",
+      "type": "output"
+    }
+  },
+  {
+    "scene_id": "41_02",
+    "pair": [
+      "4",
+      "1"
+    ],
+    "prompt_text": "1990년대 한국 친구와 함께 500냥 하우스에서 떡볶이와 김밥을 먹고 있다.",
+    "image_prompt_id": "6975fb56-a834-4e1b-b7e0-41032a64ab6b",
+    "video_prompt_id": "a9a184e0-51d6-47d7-8617-10013177a141",
+    "image_path": "D:\\2025_LBW_M2M\\data\\sessions\\TEST01\\images\\41_02.png",
+    "comfy_video": {
+      "filename": "41_02_00001_.mp4",
+      "subfolder": "M2M\\TEST04\\videos",
+      "type": "output"
+    }
+  },
+  {
+    "scene_id": "42_01",
+    "pair": [
+      "4",
+      "2"
+    ],
+    "prompt_text": "1990년대 한국 친구와 함께 용문산 계곡 근처에서 시예버스를 타고 가서 자리를 잡고 있다.",
+    "image_prompt_id": "80cbae26-391c-4aff-9410-faaf5e12eac7",
+    "video_prompt_id": "d8def38c-b7a1-4312-9fa9-14c44d92a333",
+    "image_path": "D:\\2025_LBW_M2M\\data\\sessions\\TEST01\\images\\42_01.png",
+    "comfy_video": {
+      "filename": "42_01_00001_.mp4",
+      "subfolder": "M2M\\TEST04\\videos",
+      "type": "output"
+    }
+  },
+  {
+    "scene_id": "42_02",
+    "pair": [
+      "4",
+      "2"
+    ],
+    "prompt_text": "1990년대 한국 친구와 함께 압구정에서 부대찌개를 먹고 있다.",
+    "image_prompt_id": "7791fa62-f891-49ab-835f-798d7a09d98c",
+    "video_prompt_id": "8b9c4fa8-404f-4d41-bc11-674972f288e2",
+    "image_path": "D:\\2025_LBW_M2M\\data\\sessions\\TEST01\\images\\42_02.png",
+    "comfy_video": {
+      "filename": "42_02_00001_.mp4",
+      "subfolder": "M2M\\TEST04\\videos",
+      "type": "output"
+    }
+  },
+  {
+    "scene_id": "43_01",
+    "pair": [
+      "4",
+      "3"
+    ],
+    "prompt_text": "1990년대 한국 친구와 함께 독서토론 동아리에서 책을 읽고 토론하고 있다.",
+    "image_prompt_id": "e8ea7965-e675-4cce-9041-48e4de40e14c",
+    "video_prompt_id": "e05d930a-6d7b-4d09-b332-25b9ed13235f",
+    "image_path": "D:\\2025_LBW_M2M\\data\\sessions\\TEST01\\images\\43_01.png",
+    "comfy_video": {
+      "filename": "43_01_00001_.mp4",
+      "subfolder": "M2M\\TEST04\\videos",
+      "type": "output"
+    }
+  },
+  {
+    "scene_id": "43_02",
+    "pair": [
+      "4",
+      "3"
+    ],
+    "prompt_text": "1990년대 한국 친구와 함께 델리 카레집에서 카레를 먹고 있다.",
+    "image_prompt_id": "bf8d3e35-f6e7-4bc3-9baf-7c21f8172601",
+    "video_prompt_id": "bc306a90-785b-49dd-ad08-93634210ef44",
+    "image_path": "D:\\2025_LBW_M2M\\data\\sessions\\TEST01\\images\\43_02.png",
+    "comfy_video": {
+      "filename": "43_02_00001_.mp4",
+      "subfolder": "M2M\\TEST04\\videos",
+      "type": "output"
+    }
+  }
+]

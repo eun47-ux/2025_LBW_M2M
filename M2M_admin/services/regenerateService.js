@@ -66,6 +66,15 @@ function patchVideoWorkflow({ workflowTemplate, inputFilename, promptText, filen
     wf[saveVideoId].inputs.filename_prefix = filenamePrefix;
   }
 
+  // KSamplerAdvanced 노드들의 noise_seed를 랜덤으로 설정 (randomize seed)
+  const ksamplerIds = Object.keys(wf).filter((id) => wf[id]?.class_type === "KSamplerAdvanced");
+  for (const id of ksamplerIds) {
+    if (wf[id]?.inputs && typeof wf[id].inputs.noise_seed === "number") {
+      // 랜덤 seed 생성 (0 이상의 정수)
+      wf[id].inputs.noise_seed = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
+    }
+  }
+
   return wf;
 }
 
@@ -147,12 +156,13 @@ export async function regenerateVideo(sessionId, sceneId) {
   const newPrefix = incrementVideoVersion(sceneId, sceneData.comfy_video);
   
   // 5. 워크플로우 패치 및 실행
+  // filenamePrefix에 경로 포함: M2M/${sessionId}/videos/${newPrefix}
   const workflowTemplate = loadWorkflowTemplate();
   const workflow = patchVideoWorkflow({
     workflowTemplate,
     inputFilename: uploadedImageFilename,
     promptText: sceneData.prompt_text,
-    filenamePrefix: newPrefix,
+    filenamePrefix: `M2M/${sessionId}/videos/${newPrefix}`,
   });
 
   const promptResult = await runComfyPrompt(workflow);

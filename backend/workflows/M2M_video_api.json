@@ -42,7 +42,7 @@
   "4": {
     "inputs": {
       "add_noise": "disable",
-      "noise_seed": 0,
+      "noise_seed": 400,
       "steps": 4,
       "cfg": 1,
       "sampler_name": "euler",
@@ -193,7 +193,7 @@
   "14": {
     "inputs": {
       "add_noise": "enable",
-      "noise_seed": 123293847422586,
+      "noise_seed": 400,
       "steps": 4,
       "cfg": 1,
       "sampler_name": "euler",

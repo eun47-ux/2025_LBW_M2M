@@ -127,3 +127,43 @@ export async function uploadVideoUrl(sessionId, sceneId, videoUrl) {
     return { ok: false, error: e.message };
   }
 }
+
+/**
+ * 세션의 비디오 URL 가져오기
+ * Firestore 구조: SessionID/generatedVideos/{scene_id}/videoUrl (필드)
+ */
+export async function getVideoUrls(sessionId) {
+  const firestore = initFirestore();
+  if (!firestore) {
+    console.warn("⚠️ Firestore가 초기화되지 않아 비디오 URL을 가져올 수 없습니다.");
+    return {};
+  }
+
+  try {
+    const videosRef = firestore.collection(sessionId).doc("generatedVideos");
+    const doc = await videosRef.get();
+
+    if (!doc.exists) {
+      return {};
+    }
+
+    const data = doc.data();
+    const videoUrls = {};
+
+    // generatedVideos 문서의 필드에서 가져오기
+    // 구조: { scene_id: { videoUrl: "..." }, ... }
+    for (const [key, value] of Object.entries(data)) {
+      if (value && typeof value === "object" && value.videoUrl) {
+        videoUrls[key] = value.videoUrl;
+      } else if (typeof value === "string") {
+        // 직접 URL인 경우도 처리
+        videoUrls[key] = value;
+      }
+    }
+
+    return videoUrls;
+  } catch (e) {
+    console.error(`❌ 비디오 URL 가져오기 실패 (${sessionId}):`, e.message);
+    return {};
+  }
+}

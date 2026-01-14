@@ -129,6 +129,30 @@
     .regenerate-btn:disabled {
       background: #ccc;
     }
+    .refresh-btn {
+      width: 100%;
+      padding: 10px;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      margin-top: 8px;
+    }
+    .refresh-btn:hover:not(:disabled) {
+      background: #45a049;
+    }
+    .refresh-btn:disabled {
+      background: #ccc;
+    }
+    .button-group {
+      display: flex;
+      gap: 8px;
+    }
+    .button-group button {
+      flex: 1;
+    }
     .loading {
       display: inline-block;
       width: 16px;
@@ -237,6 +261,10 @@
         
         // 비디오 목록 가져오기
         await loadVideos();
+        
+        // 버튼 다시 활성화
+        btn.disabled = false;
+        btn.textContent = "DB 로드";
       } catch (e) {
         showStatus("loadStatus", "DB 로드 실패: " + e.message, "error");
         btn.disabled = false;
@@ -258,6 +286,7 @@
         }
 
         videosData = json.videos || [];
+        console.log("비디오 데이터:", videosData); // 디버깅용
         renderVideos();
       } catch (e) {
         console.error("비디오 목록 로드 실패:", e);
@@ -273,35 +302,82 @@
         return;
       }
 
+      console.log("렌더링할 비디오 개수:", videosData.length); // 디버깅용
+
       container.innerHTML = '<div class="videos-grid"></div>';
       const grid = container.querySelector(".videos-grid");
 
       videosData.forEach((video) => {
+        // URL이 절대 URL이 아니면 http:// 추가
+        let videoUrl = video.video_url;
+        if (videoUrl) {
+          // URL 정규화: http:/ 또는 https:/를 http:// 또는 https://로 변환
+          videoUrl = videoUrl.replace(/^https?:\//, (match) => match + "/");
+          
+          // 이미 절대 URL인지 확인 (http:// 또는 https://로 시작)
+          const isAbsolute = videoUrl.match(/^https?:\/\//);
+          if (!isAbsolute) {
+            // 상대 경로인 경우에만 base URL 추가
+            const base = "http://143.248.107.38:8186";
+            videoUrl = videoUrl.startsWith("/") 
+              ? `${base}${videoUrl}`
+              : `${base}/${videoUrl}`;
+          }
+        }
+        
+        console.log(`비디오 ${video.scene_id} URL:`, videoUrl); // 디버깅용
+        
         const card = document.createElement("div");
         card.className = "video-card";
+        card.setAttribute("data-scene-id", video.scene_id);
         card.innerHTML = `
           <h3>씬 ID: ${video.scene_id}</h3>
           <p>${video.prompt_text || ""}</p>
-          ${video.video_url ? `
-            <video controls>
-              <source src="${video.video_url}" type="video/mp4">
-              비디오를 재생할 수 없습니다.
-            </video>
-          ` : '<p style="color: #999;">비디오 URL이 없습니다.</p>'}
-          <button class="regenerate-btn" data-scene-id="${video.scene_id}">
-            🔄 재생성
-          </button>
+          <div class="video-wrapper" data-scene-id="${video.scene_id}">
+            ${videoUrl ? `
+              <video controls>
+                <source src="${videoUrl}" type="video/mp4">
+                비디오를 재생할 수 없습니다.
+              </video>
+            ` : '<p style="color: #999;">비디오 URL이 없습니다.</p>'}
+          </div>
+          <div class="button-group">
+            <button class="regenerate-btn" data-scene-id="${video.scene_id}">
+              🔄 재생성
+            </button>
+            <button class="refresh-btn" data-scene-id="${video.scene_id}">
+              🔃 새로고침
+            </button>
+          </div>
         `;
         grid.appendChild(card);
       });
 
-      // 재생성 버튼 이벤트
-      document.querySelectorAll(".regenerate-btn").forEach((btn) => {
-        btn.addEventListener("click", async () => {
-          const sceneId = btn.dataset.sceneId;
-          await regenerateVideo(sceneId, btn);
+      // 이벤트 위임을 한 번만 등록 (중복 방지)
+      const videosContainer = document.getElementById("videosContainer");
+      if (videosContainer && !videosContainer.dataset.listenerAttached) {
+        videosContainer.dataset.listenerAttached = "true";
+        
+        videosContainer.addEventListener("click", async (e) => {
+          const regenerateBtn = e.target.closest(".regenerate-btn");
+          if (regenerateBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            const sceneId = regenerateBtn.dataset.sceneId;
+            await regenerateVideo(sceneId, regenerateBtn);
+            return;
+          }
+          
+          const refreshBtn = e.target.closest(".refresh-btn");
+          if (refreshBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            const sceneId = refreshBtn.dataset.sceneId;
+            await refreshVideo(sceneId, refreshBtn);
+            return;
+          }
         });
-      });
+      }
     }
 
     // 비디오 재생성
@@ -326,12 +402,93 @@
 
         alert(`✅ 재생성 완료! 새 비디오 URL: ${json.newVideoUrl}`);
         
-        // 비디오 목록 새로고침
-        await loadVideos();
+        // 버튼 다시 활성화 (빨간색으로)
+        btnElement.disabled = false;
+        btnElement.textContent = "🔄 재생성";
+        
+        // 비디오 목록은 DB 로드 버튼을 눌렀을 때만 새로고침
       } catch (e) {
         alert("재생성 실패: " + e.message);
         btnElement.disabled = false;
         btnElement.textContent = "🔄 재생성";
+      }
+    }
+
+    // 비디오 새로고침 (해당 씬만)
+    async function refreshVideo(sceneId, btnElement) {
+      if (!currentSessionId) return;
+
+      btnElement.disabled = true;
+      btnElement.innerHTML = '<span class="loading"></span> 새로고침 중...';
+
+      try {
+        // DB에서 최신 정보 가져오기 (refresh=true)
+        const res = await fetch(`${API_BASE}/api/session/${currentSessionId}/videos?refresh=true`);
+        const json = await res.json();
+
+        if (!json.ok) {
+          alert("새로고침 실패: " + (json.error || ""));
+          btnElement.disabled = false;
+          btnElement.textContent = "🔃 새로고침";
+          return;
+        }
+
+        // 해당 씬의 비디오 정보 찾기
+        const updatedVideo = json.videos?.find((v) => v.scene_id === sceneId);
+        if (!updatedVideo) {
+          alert(`씬 ${sceneId}의 비디오 정보를 찾을 수 없습니다.`);
+          btnElement.disabled = false;
+          btnElement.textContent = "🔃 새로고침";
+          return;
+        }
+
+        // videosData 업데이트
+        const index = videosData.findIndex((v) => v.scene_id === sceneId);
+        if (index >= 0) {
+          videosData[index] = updatedVideo;
+        } else {
+          videosData.push(updatedVideo);
+        }
+
+        // 해당 카드의 비디오만 업데이트
+        const card = document.querySelector(`.video-card[data-scene-id="${sceneId}"]`);
+        if (card) {
+          const videoWrapper = card.querySelector(".video-wrapper");
+          if (videoWrapper) {
+            if (updatedVideo.video_url) {
+              // URL 정규화: http:/ 또는 https:/를 http:// 또는 https://로 변환
+              let videoUrl = updatedVideo.video_url.replace(/^https?:\//, (match) => match + "/");
+              
+              // URL이 절대 URL인지 확인 (http:// 또는 https://로 시작)
+              const isAbsolute = videoUrl.match(/^https?:\/\//);
+              if (!isAbsolute) {
+                // 상대 경로인 경우에만 base URL 추가
+                const base = "http://143.248.107.38:8186";
+                videoUrl = videoUrl.startsWith("/") 
+                  ? `${base}${videoUrl}`
+                  : `${base}/${videoUrl}`;
+              }
+              
+              // 캐시 방지를 위해 타임스탬프 추가
+              const cacheBuster = `?t=${Date.now()}`;
+              videoWrapper.innerHTML = `
+                <video controls>
+                  <source src="${videoUrl}${cacheBuster}" type="video/mp4">
+                  비디오를 재생할 수 없습니다.
+                </video>
+              `;
+            } else {
+              videoWrapper.innerHTML = '<p style="color: #999;">비디오 URL이 없습니다.</p>';
+            }
+          }
+        }
+
+        btnElement.disabled = false;
+        btnElement.textContent = "🔃 새로고침";
+      } catch (e) {
+        alert("새로고침 실패: " + e.message);
+        btnElement.disabled = false;
+        btnElement.textContent = "🔃 새로고침";
       }
     }
 

@@ -1,0 +1,6 @@
+file 'D:\2025_LBW_M2M\data\sessions\TEST04\videos\41_01.mp4'
+file 'D:\2025_LBW_M2M\data\sessions\TEST04\videos\41_02.mp4'
+file 'D:\2025_LBW_M2M\data\sessions\TEST04\videos\42_01.mp4'
+file 'D:\2025_LBW_M2M\data\sessions\TEST04\videos\42_02.mp4'
+file 'D:\2025_LBW_M2M\data\sessions\TEST04\videos\43_01.mp4'
+file 'D:\2025_LBW_M2M\data\sessions\TEST04\videos\43_02.mp4'

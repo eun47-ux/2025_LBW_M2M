@@ -74,34 +74,51 @@ app.post("/api/session/:sessionId/load-from-db", async (req, res) => {
 /**
  * 비디오 목록 조회
  * GET /api/session/:sessionId/videos
+ * Query: ?refresh=true (DB에서 최신 정보 가져오기)
+ * comfy_results.json은 사용하지 않고 DB의 videoUrls에서만 비디오 목록 생성
  */
 app.get("/api/session/:sessionId/videos", async (req, res) => {
       try {
         const { sessionId } = req.params;
-        const sessionDir = path.join(ADMIN_SESSIONS_DIR, sessionId);
-        const comfyResultsPath = path.join(sessionDir, "comfy_results.json");
+        const { refresh } = req.query;
 
-        if (!fs.existsSync(comfyResultsPath)) {
-          return res.status(404).json({ ok: false, error: "comfy_results.json not found" });
+        let videos = [];
+
+        // DB의 videoUrls에서 비디오 목록 생성
+        try {
+          const { getVideoUrls } = await import("./services/firestoreService.js");
+          const videoUrls = refresh === "true" 
+            ? await getVideoUrls(sessionId) 
+            : await getVideoUrls(sessionId);
+          
+          for (const [sceneId, videoUrl] of Object.entries(videoUrls)) {
+            if (!videoUrl) continue;
+            
+            // URL 정규화: http:/ 또는 https:/를 http:// 또는 https://로 변환
+            let normalizedUrl = videoUrl.replace(/^https?:\//, (match) => match + "/");
+            
+            // URL이 절대 URL인지 확인 (http:// 또는 https://로 시작)
+            let absoluteUrl = normalizedUrl;
+            const isAbsolute = normalizedUrl.match(/^https?:\/\//);
+            if (!isAbsolute) {
+              // 상대 경로인 경우에만 COMFY_STATIC_BASE 사용
+              const base = process.env.COMFY_STATIC_BASE || "http://143.248.107.38:8186";
+              absoluteUrl = normalizedUrl.startsWith("/") 
+                ? `${base}${normalizedUrl}`
+                : `${base}/${normalizedUrl}`;
+            }
+            
+            videos.push({
+              scene_id: sceneId,
+              prompt_text: "",
+              video_prompt_id: null,
+              video_url: absoluteUrl,
+              comfy_video: null,
+            });
+          }
+        } catch (e) {
+          console.warn("DB에서 videoUrls 가져오기 실패:", e.message);
         }
-
-        const results = JSON.parse(fs.readFileSync(comfyResultsPath, "utf-8"));
-    const videos = Array.isArray(results)
-      ? results
-          .filter((r) => r.video_prompt_id || r.comfy_video)
-          .map((r) => {
-            const videoUrl = r.comfy_video
-              ? `${process.env.COMFY_STATIC_BASE || "http://143.248.107.38:8186"}/${r.comfy_video.subfolder}/${r.comfy_video.filename}`.replace(/\\/g, "/")
-              : null;
-            return {
-              scene_id: r.scene_id,
-              prompt_text: r.prompt_text,
-              video_prompt_id: r.video_prompt_id,
-              video_url: videoUrl,
-              comfy_video: r.comfy_video,
-            };
-          })
-      : [];
 
     return res.json({ ok: true, sessionId, videos });
   } catch (e) {

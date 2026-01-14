@@ -1,6 +1,7 @@
 // backend/services/movieService.js
 import fs from "fs";
 import path from "path";
+import axios from "axios";
 import { spawn } from "child_process";
 import { SESSIONS_DIR, COMFY_URL, COMFY_STATIC_BASE } from "../config.js";
 import { waitForVideoOutput, downloadComfyFile, downloadComfyStaticFile, safeSceneFilename } from "./comfyVideo.js";
@@ -67,6 +68,16 @@ export async function concatVideos(sessionId) {
   const videosDir = path.join(sessionPath, "videos");
   fs.mkdirSync(videosDir, { recursive: true });
 
+  // Firestore에서 최신 비디오 URL 가져오기
+  let firestoreVideoUrls = {};
+  try {
+    const { getVideoUrls } = await import("./firestoreService.js");
+    firestoreVideoUrls = await getVideoUrls(sessionId);
+    console.log(`✅ Firestore에서 비디오 URL ${Object.keys(firestoreVideoUrls).length}개 로드`);
+  } catch (e) {
+    console.warn(`⚠️ Firestore에서 비디오 URL 가져오기 실패: ${e.message}`);
+  }
+
   const downloaded = [];
   for (const item of results) {
     const promptId = item.video_prompt_id || item.prompt_id;
@@ -84,7 +95,37 @@ export async function concatVideos(sessionId) {
       continue;
     }
 
-    // ComfyUI에서 비디오 정보 가져오기 (이미 생성 완료된 경우 comfy_video 사용, 아니면 history에서 조회)
+    // Firestore에 최신 비디오 URL이 있으면 우선 사용
+    const firestoreUrl = firestoreVideoUrls[item.scene_id];
+    if (firestoreUrl) {
+      try {
+        const filename = safeSceneFilename(item.scene_id, promptId);
+        const localPath = path.join(videosDir, filename);
+        
+        // Firestore URL에서 직접 다운로드
+        const response = await axios.get(firestoreUrl, { responseType: "stream", timeout: 120000 });
+        await new Promise((resolve, reject) => {
+          const writer = fs.createWriteStream(localPath);
+          response.data.pipe(writer);
+          writer.on("finish", resolve);
+          writer.on("error", reject);
+        });
+        
+        console.log(`✅ Firestore URL에서 비디오 다운로드: ${item.scene_id} → ${localPath}`);
+        downloaded.push({
+          scene_id: item.scene_id,
+          prompt_id: promptId,
+          filename,
+          path: localPath,
+          source: "firestore",
+        });
+        continue;
+      } catch (err) {
+        console.warn(`⚠️ Firestore URL 다운로드 실패 (${item.scene_id}): ${err.message}, comfy_video로 fallback`);
+      }
+    }
+
+    // Firestore URL이 없거나 실패하면 comfy_video 사용
     let videoInfo = item.comfy_video;
     if (!videoInfo) {
       // comfy_video가 없으면 history에서 조회

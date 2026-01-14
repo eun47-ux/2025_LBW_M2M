@@ -32,20 +32,12 @@ async function downloadFile(url, destPath) {
 
 /**
  * DB에서 세션 데이터 로드
+ * comfy_results.json은 로딩하지 않고 이미지/비디오 URL만 로딩
  */
 export async function loadSessionFromDB(sessionId) {
   const sessionDir = ensureSessionDir(sessionId);
 
-  // 1. comfy_results.json 다운로드
-  const comfyResults = await getComfyResults(sessionId);
-  if (!comfyResults) {
-    throw new Error(`comfy_results.json not found in DB for session ${sessionId}`);
-  }
-
-  const comfyResultsPath = path.join(sessionDir, "comfy_results.json");
-  fs.writeFileSync(comfyResultsPath, JSON.stringify(comfyResults, null, 2), "utf-8");
-
-  // 2. 이미지 URL 가져오기 및 다운로드
+  // 1. 이미지 URL 가져오기 및 다운로드
   const imageUrls = await getImageUrls(sessionId);
   const downloadedImages = [];
   
@@ -61,14 +53,17 @@ export async function loadSessionFromDB(sessionId) {
     }
   }
 
-  // 3. 비디오 URL 가져오기 (다운로드는 하지 않음, 미리보기용)
+  // 2. 비디오 URL 가져오기 (다운로드는 하지 않음, 미리보기용)
   const videoUrls = await getVideoUrls(sessionId);
+
+  // 이미지나 비디오가 하나라도 있어야 함
+  if (downloadedImages.length === 0 && Object.keys(videoUrls).length === 0) {
+    throw new Error(`세션 ${sessionId}에 로딩할 데이터가 없습니다. (이미지, 비디오 모두 없음)`);
+  }
 
   return {
     sessionId,
     sessionDir,
-    comfyResults,
-    comfyResultsPath,
     imageUrls,
     videoUrls,
     downloadedImages,
