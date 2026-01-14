@@ -203,6 +203,43 @@ function loadYoutubeApi() {
   return ytApiPromise;
 }
 
+/**
+ * YouTube 검색 (백엔드 API 사용)
+ */
+async function searchYouTube(query, setResults, setLoading, setError) {
+  if (!query.trim()) {
+    setResults([]);
+    return;
+  }
+
+  setLoading(true);
+  setError("");
+
+  try {
+    // Vite에서는 import.meta.env 사용 (또는 기본값 사용)
+    const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
+    const response = await fetch(
+      `${API_BASE}/api/youtube/search?q=${encodeURIComponent(query)}`
+    );
+
+    if (!response.ok) {
+      throw new Error("YouTube 검색 실패");
+    }
+
+    const data = await response.json();
+    if (!data.ok) {
+      throw new Error(data.error || "검색 실패");
+    }
+
+    setResults(data.results || []);
+  } catch (error) {
+    setError("검색 중 오류가 발생했습니다.");
+    console.error("YouTube search error:", error);
+  } finally {
+    setLoading(false);
+  }
+}
+
 export default function App() {
   // image
   const [imageFile, setImageFile] = useState(null);
@@ -255,6 +292,11 @@ export default function App() {
   const [playlistIndex, setPlaylistIndex] = useState(0);
   const [playlistMode, setPlaylistMode] = useState("");
   const playlistVideoRef = useRef(null);
+  // YouTube 검색 관련 state
+  const [ytSearchQuery, setYtSearchQuery] = useState("");
+  const [ytSearchResults, setYtSearchResults] = useState([]);
+  const [ytSearchLoading, setYtSearchLoading] = useState(false);
+  const [ytSearchError, setYtSearchError] = useState("");
 
   // cleanup object urls
   useEffect(() => {
@@ -264,6 +306,23 @@ export default function App() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // 검색 실행 함수
+  const handleSearch = () => {
+    if (ytSearchQuery.trim()) {
+      searchYouTube(ytSearchQuery, setYtSearchResults, setYtSearchLoading, setYtSearchError);
+    } else {
+      setYtSearchResults([]);
+      setYtSearchError("");
+    }
+  };
+
+  // Enter 키로 검색
+  const handleSearchKeyPress = (e) => {
+    if (e.key === "Enter") {
+      handleSearch();
+    }
+  };
 
   // ---- Sync final.mp4 play/pause with YouTube audio ----
   useEffect(() => {
@@ -644,7 +703,7 @@ export default function App() {
 
   return (
     <div style={{ padding: 16, fontFamily: "system-ui, -apple-system, Segoe UI, Roboto" }}>
-      <h2 style={{ margin: 0 }}>🧩 Manual Crop + Owner Select (MVP)</h2>
+      <h2 style={{ margin: 0 }}>Moments to Memories</h2>
       
       {/* 1단계: 세션 ID 입력 */}
       <div style={{ marginTop: 16, padding: 16, background: "#f9f9f9", borderRadius: 12, border: "2px solid #ddd" }}>
@@ -1504,7 +1563,7 @@ export default function App() {
                   음악 링크를 적용한 뒤에 영상 재생이 가능해요.
                 </div>
               )}
-              {/* YouTube URL input (only after final.mp4 is rendered) */}
+              {/* YouTube Music 검색 및 선택 (only after final.mp4 is rendered) */}
               <div
                 style={{
                   marginTop: 12,
@@ -1514,17 +1573,20 @@ export default function App() {
                 }}
               >
                 <div style={{ fontWeight: 700, fontSize: 12, marginBottom: 6 }}>
-                  🎵 추억 노래 (YouTube)
+                  🎵 추억 노래 (YouTube Music)
                 </div>
                 <div style={{ fontSize: 11, color: "#888", marginBottom: 6 }}>
-                  음악은 45초부터 재생돼요. (페이드 인/아웃 0.5초)
+                  음악은 45초부터 재생돼요. (페이드 인/아웃 1초)
                 </div>
-                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                
+                {/* 검색 입력 */}
+                <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
                   <input
                     type="text"
-                    value={ytUrlInput}
-                    onChange={(e) => setYtUrlInput(e.target.value)}
-                    placeholder="유튜브 링크 붙여넣기"
+                    value={ytSearchQuery}
+                    onChange={(e) => setYtSearchQuery(e.target.value)}
+                    onKeyPress={handleSearchKeyPress}
+                    placeholder="노래 제목 또는 아티스트 검색..."
                     style={{
                       flex: 1,
                       padding: "8px 10px",
@@ -1534,39 +1596,168 @@ export default function App() {
                     }}
                   />
                   <button
-                    onClick={() => {
-                      const id = parseYoutubeId(ytUrlInput);
-                      if (!id) {
-                        setYtError("유효한 유튜브 링크가 아니에요.");
-                        return;
-                      }
-                      setYtVideoId(id);
-                      setYtError("");
-                    }}
+                    onClick={handleSearch}
+                    disabled={ytSearchLoading || !ytSearchQuery.trim()}
                     style={{
-                      padding: "8px 12px",
+                      padding: "8px 16px",
                       borderRadius: 8,
                       border: "1px solid #ddd",
-                      background: "#111",
+                      background: ytSearchLoading || !ytSearchQuery.trim() ? "#ccc" : "#111",
                       color: "#fff",
                       fontSize: 12,
                       fontWeight: 700,
-                      cursor: "pointer",
+                      cursor: ytSearchLoading || !ytSearchQuery.trim() ? "not-allowed" : "pointer",
+                      whiteSpace: "nowrap",
                     }}
                   >
-                    적용
+                    {ytSearchLoading ? "검색 중..." : "검색"}
                   </button>
                 </div>
-                {ytError && (
-                  <div style={{ marginTop: 6, fontSize: 11, color: "#b00020" }}>
-                    {ytError}
+
+                {/* 검색 결과 목록 */}
+                {ytSearchError && (
+                  <div style={{ fontSize: 11, color: "#b00020", marginBottom: 8 }}>
+                    {ytSearchError}
                   </div>
                 )}
+
+                {ytSearchResults.length > 0 && (
+                  <div
+                    style={{
+                      maxHeight: "300px",
+                      overflowY: "auto",
+                      border: "1px solid #eee",
+                      borderRadius: 8,
+                      padding: 8,
+                      marginBottom: 8,
+                    }}
+                  >
+                    {ytSearchResults.map((result) => (
+                      <div
+                        key={result.videoId}
+                        onClick={() => {
+                          setYtVideoId(result.videoId);
+                          setYtUrlInput(`https://www.youtube.com/watch?v=${result.videoId}`);
+                          setYtSearchQuery("");
+                          setYtSearchResults([]);
+                          setYtError("");
+                        }}
+                        style={{
+                          display: "flex",
+                          gap: 8,
+                          padding: 8,
+                          borderRadius: 6,
+                          cursor: "pointer",
+                          border: "1px solid transparent",
+                          marginBottom: 4,
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = "#f5f5f5";
+                          e.currentTarget.style.borderColor = "#ddd";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = "transparent";
+                          e.currentTarget.style.borderColor = "transparent";
+                        }}
+                      >
+                        {result.thumbnail && (
+                          <img
+                            src={result.thumbnail}
+                            alt={result.title}
+                            style={{
+                              width: 60,
+                              height: 45,
+                              objectFit: "cover",
+                              borderRadius: 4,
+                            }}
+                          />
+                        )}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div
+                            style={{
+                              fontSize: 12,
+                              fontWeight: 600,
+                              marginBottom: 2,
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {result.title}
+                          </div>
+                          <div
+                            style={{
+                              fontSize: 10,
+                              color: "#888",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {result.channelTitle}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* 직접 URL 입력 옵션 (접을 수 있게) */}
+                <details style={{ fontSize: 11 }}>
+                  <summary style={{ cursor: "pointer", color: "#666", marginBottom: 6 }}>
+                    또는 직접 URL 입력
+                  </summary>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 6 }}>
+                    <input
+                      type="text"
+                      value={ytUrlInput}
+                      onChange={(e) => setYtUrlInput(e.target.value)}
+                      placeholder="유튜브 링크 붙여넣기"
+                      style={{
+                        flex: 1,
+                        padding: "8px 10px",
+                        borderRadius: 8,
+                        border: "1px solid #ddd",
+                        fontSize: 12,
+                      }}
+                    />
+                    <button
+                      onClick={() => {
+                        const id = parseYoutubeId(ytUrlInput);
+                        if (!id) {
+                          setYtError("유효한 유튜브 링크가 아니에요.");
+                          return;
+                        }
+                        setYtVideoId(id);
+                        setYtError("");
+                      }}
+                      style={{
+                        padding: "8px 12px",
+                        borderRadius: 8,
+                        border: "1px solid #ddd",
+                        background: "#111",
+                        color: "#fff",
+                        fontSize: 12,
+                        fontWeight: 700,
+                        cursor: "pointer",
+                      }}
+                    >
+                      적용
+                    </button>
+                  </div>
+                  {ytError && (
+                    <div style={{ marginTop: 6, fontSize: 11, color: "#b00020" }}>
+                      {ytError}
+                    </div>
+                  )}
+                </details>
+
                 {ytVideoId && (
                   <div style={{ marginTop: 6, fontSize: 11, color: "#666" }}>
                     상태: {ytStatus === "ready" ? "연결됨" : ytStatus === "error" ? "오류" : "로딩 중"}
                   </div>
                 )}
+                
                 {/* Hidden YouTube player (audio only) */}
                 <div
                   id={ytContainerIdRef.current}

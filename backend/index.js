@@ -441,6 +441,46 @@ app.get("/api/session/:sessionId/videos-playlist", (req, res) => {
   }
 });
 
+/**
+ * YouTube 검색
+ * GET /api/youtube/search?q=검색어
+ */
+app.get("/api/youtube/search", async (req, res) => {
+  try {
+    const { q } = req.query;
+    if (!q || !q.trim()) {
+      return res.status(400).json({ ok: false, error: "검색어가 필요합니다" });
+    }
+
+    const { YOUTUBE_API_KEY } = await import("./config.js");
+    if (!YOUTUBE_API_KEY) {
+      return res.status(500).json({ ok: false, error: "YouTube API 키가 설정되지 않았습니다" });
+    }
+
+    const response = await fetch(
+      `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoCategoryId=10&q=${encodeURIComponent(q.trim())}&maxResults=10&key=${YOUTUBE_API_KEY}`
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error?.message || "YouTube 검색 실패");
+    }
+
+    const data = await response.json();
+    const results = (data.items || []).map((item) => ({
+      videoId: item.id.videoId,
+      title: item.snippet.title,
+      channelTitle: item.snippet.channelTitle,
+      thumbnail: item.snippet.thumbnails?.default?.url || "",
+    }));
+
+    return res.json({ ok: true, results });
+  } catch (e) {
+    console.error("YouTube search error:", e);
+    return res.status(500).json({ ok: false, error: e?.message || "검색 중 오류가 발생했습니다" });
+  }
+});
+
 // ===============================
 // Start server
 // ===============================

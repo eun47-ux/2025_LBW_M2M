@@ -32,3 +32,6 @@ export const PYTHON_SCRIPT_PATH = path.join(__dirname, "scripts", "generate_imag
 // Firestore 설정
 export const FIRESTORE_PROJECT_ID = process.env.FIRESTORE_PROJECT_ID || "";
 export const FIRESTORE_KEY_PATH = process.env.FIRESTORE_KEY_PATH || path.join(__dirname, "serviceAccountKey.json");
+
+// YouTube API 설정
+export const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY || "";
