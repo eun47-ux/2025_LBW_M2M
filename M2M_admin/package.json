@@ -1,0 +1,21 @@
+{
+  "name": "m2m-admin",
+  "version": "1.0.0",
+  "description": "M2M Admin - 영상 생성 모니터링 및 재생성 앱",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.2.1",
+    "firebase-admin": "^12.0.0",
+    "axios": "^1.13.2",
+    "dotenv": "^17.2.3",
+    "cors": "^2.8.5"
+  }
+}

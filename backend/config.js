@@ -28,3 +28,7 @@ export const VIDEO_WORKFLOW_PATH = path.join(__dirname, "workflows", "M2M_video_
 
 // Python 스크립트 경로
 export const PYTHON_SCRIPT_PATH = path.join(__dirname, "scripts", "generate_image.py");
+
+// Firestore 설정
+export const FIRESTORE_PROJECT_ID = process.env.FIRESTORE_PROJECT_ID || "";
+export const FIRESTORE_KEY_PATH = process.env.FIRESTORE_KEY_PATH || path.join(__dirname, "serviceAccountKey.json");

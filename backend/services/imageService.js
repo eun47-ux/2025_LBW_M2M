@@ -197,8 +197,8 @@ export async function runImageScenes(sessionId) {
       const localImagePath = path.join(imagesDir, `${item.scene_id}.png`);
       const imageInfo = images[0];
 
-      // Static server에서 다운로드 시도
-      let downloaded = false;
+      // 이미지 URL 구성 (Firestore 업로드용)
+      let imageUrl = null;
       if (COMFY_STATIC_BASE) {
         const imagesBaseUrl = `${COMFY_STATIC_BASE}/M2M/${sessionId}/images/`;
         
@@ -209,6 +209,7 @@ export async function runImageScenes(sessionId) {
           `${item.scene_id}.png`,
         ];
 
+        let downloaded = false;
         for (const filename of possibleFilenames) {
           const url = `${imagesBaseUrl}${filename}`;
           
@@ -222,6 +223,7 @@ export async function runImageScenes(sessionId) {
               out.on("error", reject);
             });
             console.log(`[DEBUG] 이미지 다운로드 성공: ${url} → ${localImagePath}`);
+            imageUrl = url;
             downloaded = true;
             break;
           } catch (directErr) {
@@ -233,13 +235,28 @@ export async function runImageScenes(sessionId) {
             throw directErr; // 다른 에러는 재throw
           }
         }
-      }
 
-      // Static server 다운로드 실패 시 ComfyUI API를 통한 다운로드 (fallback)
-      if (!downloaded) {
-        console.log(`[DEBUG] Static server 다운로드 실패, ComfyUI API로 fallback`);
+        // Static server 다운로드 실패 시 ComfyUI API를 통한 다운로드 (fallback)
+        if (!downloaded) {
+          console.log(`[DEBUG] Static server 다운로드 실패, ComfyUI API로 fallback`);
+          await downloadComfyFile(COMFY_URL, imageInfo, localImagePath);
+          // Fallback 시 ComfyUI API URL 사용
+          const params = new URLSearchParams({
+            filename: imageInfo.filename,
+            type: imageInfo.type || "output",
+            subfolder: imageInfo.subfolder || "",
+          });
+          imageUrl = `${COMFY_URL}/view?${params.toString()}`;
+        }
+      } else {
+        // COMFY_STATIC_BASE가 없으면 ComfyUI API로 다운로드
         await downloadComfyFile(COMFY_URL, imageInfo, localImagePath);
-        downloaded = true;
+        const params = new URLSearchParams({
+          filename: imageInfo.filename,
+          type: imageInfo.type || "output",
+          subfolder: imageInfo.subfolder || "",
+        });
+        imageUrl = `${COMFY_URL}/view?${params.toString()}`;
       }
 
       results.push({
@@ -249,6 +266,12 @@ export async function runImageScenes(sessionId) {
         image_prompt_id: imagePromptId,
         image_path: localImagePath,
       });
+
+      // Firestore에 이미지 URL 업로드
+      if (imageUrl) {
+        const { uploadImageUrl } = await import("./firestoreService.js");
+        await uploadImageUrl(sessionId, item.scene_id, imageUrl);
+      }
 
       console.log(`✅ image ${item.scene_id} → ${imagePromptId}`);
     } catch (err) {

@@ -1,0 +1,112 @@
+// M2M_admin/services/comfyVideoService.js
+import axios from "axios";
+import fs from "fs";
+import { COMFY_URL, COMFY_STATIC_BASE } from "../config.js";
+
+function isVideoFile(name) {
+  return /\.(mp4|webm|mov|mkv)$/i.test(name || "");
+}
+
+export function extractVideoFiles(historyItem) {
+  const outputs = historyItem?.outputs || {};
+  const videos = [];
+
+  for (const nodeOutput of Object.values(outputs)) {
+    if (!nodeOutput || typeof nodeOutput !== "object") continue;
+    const pools = [
+      ...(Array.isArray(nodeOutput.videos) ? nodeOutput.videos : []),
+      ...(Array.isArray(nodeOutput.gifs) ? nodeOutput.gifs : []),
+      ...(Array.isArray(nodeOutput.images) ? nodeOutput.images : []),
+    ];
+    for (const item of pools) {
+      if (item?.filename && isVideoFile(item.filename)) {
+        videos.push({
+          filename: item.filename,
+          subfolder: item.subfolder || "",
+          type: item.type || "output",
+        });
+      }
+    }
+  }
+
+  return videos;
+}
+
+export async function fetchPromptHistory(comfyBase, promptId) {
+  const res = await axios.get(`${comfyBase}/history/${promptId}`, { timeout: 120000 });
+  return res.data?.[promptId] || null;
+}
+
+export async function waitForVideoOutput(comfyBase, promptId, timeoutMs = 300000) {
+  const started = Date.now();
+  while (Date.now() - started < timeoutMs) {
+    const history = await fetchPromptHistory(comfyBase, promptId);
+    
+    // 에러 상태 확인
+    if (history?.status?.status_str === "error" || history?.status?.completed === false) {
+      const errorMsg = history?.status?.messages?.join(", ") || "Unknown error";
+      throw new Error(`ComfyUI execution failed: ${errorMsg}`);
+    }
+    
+    const videos = extractVideoFiles(history);
+    if (videos.length) return videos;
+    await new Promise((r) => setTimeout(r, 2000));
+  }
+  return [];
+}
+
+export async function downloadComfyFile(comfyBase, fileInfo, destPath) {
+  const params = new URLSearchParams({
+    filename: fileInfo.filename,
+    type: fileInfo.type || "output",
+    subfolder: fileInfo.subfolder || "",
+  });
+  const url = `${comfyBase}/view?${params.toString()}`;
+
+  const res = await axios.get(url, { responseType: "stream", timeout: 120000 });
+  await new Promise((resolve, reject) => {
+    const out = fs.createWriteStream(destPath);
+    res.data.pipe(out);
+    out.on("finish", resolve);
+    out.on("error", reject);
+  });
+
+  return destPath;
+}
+
+function joinUrl(base, subpath) {
+  const cleanBase = (base || "").replace(/\/+$/, "");
+  const cleanPath = (subpath || "").replace(/^\/+/, "");
+  return `${cleanBase}/${cleanPath}`;
+}
+
+export async function downloadComfyStaticFile(comfyStaticBase, fileInfo, destPath) {
+  const subfolder = (fileInfo.subfolder || "").replace(/\\/g, "/").replace(/^\/+|\/+$/g, "");
+  const filename = (fileInfo.filename || "").replace(/\\/g, "/");
+  
+  let relPath;
+  if (subfolder) {
+    const cleanSubfolder = subfolder.replace(/^output\//, "");
+    relPath = [cleanSubfolder, filename].filter(Boolean).join("/");
+  } else {
+    relPath = filename;
+  }
+  
+  const url = joinUrl(comfyStaticBase, relPath);
+  console.log(`[DEBUG] 다운로드 시도: ${url}`);
+
+  try {
+    const res = await axios.get(url, { responseType: "stream", timeout: 120000 });
+    await new Promise((resolve, reject) => {
+      const out = fs.createWriteStream(destPath);
+      res.data.pipe(out);
+      out.on("finish", resolve);
+      out.on("error", reject);
+    });
+    console.log(`[DEBUG] 다운로드 성공: ${destPath}`);
+    return destPath;
+  } catch (err) {
+    console.error(`[DEBUG] 다운로드 실패: ${url}`, err.message);
+    throw err;
+  }
+}

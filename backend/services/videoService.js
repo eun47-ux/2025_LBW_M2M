@@ -142,6 +142,20 @@ export async function runVideoScenes(sessionId) {
       // 비디오 정보만 저장 (다운로드는 영상 합치기 시 수행)
       const videoInfo = videos[0];
 
+      // 비디오 URL 구성 (Firestore 업로드용)
+      let videoUrl = null;
+      if (COMFY_STATIC_BASE) {
+        const subfolder = (videoInfo.subfolder || "").replace(/\\/g, "/");
+        videoUrl = `${COMFY_STATIC_BASE}/${subfolder}/${videoInfo.filename}`.replace(/\/+/g, "/");
+      } else {
+        const params = new URLSearchParams({
+          filename: videoInfo.filename,
+          type: videoInfo.type || "output",
+          subfolder: videoInfo.subfolder || "",
+        });
+        videoUrl = `${COMFY_URL}/view?${params.toString()}`;
+      }
+
       results.push({
         scene_id: item.scene_id,
         pair: item.pair,
@@ -151,6 +165,12 @@ export async function runVideoScenes(sessionId) {
         image_path: imagePath,
         comfy_video: videoInfo, // 다운로드 정보만 저장
       });
+
+      // Firestore에 비디오 URL 업로드
+      if (videoUrl) {
+        const { uploadVideoUrl } = await import("./firestoreService.js");
+        await uploadVideoUrl(sessionId, item.scene_id, videoUrl);
+      }
 
       console.log(`✅ video ${item.scene_id} → ${videoPromptId} (generated, will download on concat)`);
     } catch (err) {
@@ -167,5 +187,10 @@ export async function runVideoScenes(sessionId) {
 
   const outPath = path.join(sessionDir, "comfy_results.json");
   fs.writeFileSync(outPath, JSON.stringify(results, null, 2), "utf-8");
+
+  // Firestore에 comfy_results.json 업로드
+  const { uploadComfyResults } = await import("./firestoreService.js");
+  await uploadComfyResults(sessionId, results);
+
   return { outPath, results };
 }
