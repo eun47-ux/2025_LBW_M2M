@@ -1,0 +1,81 @@
+{
+  "sessionId": "P8",
+  "createdAt": "2026-01-14T20:06:33.257Z",
+  "ownerId": "rz1n1dw1",
+  "labelMap": {
+    "1": "issnz2pp",
+    "2": "rz1n1dw1",
+    "3": "erx18hyd",
+    "4": "5ys2xbvx"
+  },
+  "cropMetaArr": [
+    {
+      "id": "issnz2pp",
+      "rect": {
+        "x": 645,
+        "y": 294,
+        "width": 974,
+        "height": 2133
+      }
+    },
+    {
+      "id": "rz1n1dw1",
+      "rect": {
+        "x": 1214,
+        "y": 543,
+        "width": 874,
+        "height": 1915
+      }
+    },
+    {
+      "id": "erx18hyd",
+      "rect": {
+        "x": 1784,
+        "y": 377,
+        "width": 874,
+        "height": 1915
+      }
+    },
+    {
+      "id": "5ys2xbvx",
+      "rect": {
+        "x": 2412,
+        "y": 84,
+        "width": 997,
+        "height": 2186
+      }
+    }
+  ],
+  "originalSavedName": "original.png",
+  "updatedAt": "2026-01-14T20:13:24.178Z",
+  "labels": {
+    "filename": "labels.json",
+    "path": "/Users/ijieun/CHI 25 LBW/mvp-service/data/sessions/P8/labels.json",
+    "createdAt": "2026-01-14T20:13:25.306Z"
+  },
+  "audio": {
+    "filename": "recording.m4a",
+    "path": "/Users/ijieun/CHI 25 LBW/mvp-service/data/sessions/P8/audio/recording.m4a",
+    "uploadedAt": "2026-01-14T20:13:40.333Z",
+    "mimetype": "audio/x-m4a",
+    "size": 12929455
+  },
+  "transcript": {
+    "filename": "transcript.txt",
+    "path": "/Users/ijieun/CHI 25 LBW/mvp-service/data/sessions/P8/transcript.txt",
+    "createdAt": "2026-01-14T20:15:02.273Z",
+    "audioUsed": "recording.m4a"
+  },
+  "scenes": {
+    "filename": "scenes.json",
+    "path": "/Users/ijieun/CHI 25 LBW/mvp-service/data/sessions/P8/scenes.json",
+    "createdAt": "2026-01-14T20:15:33.589Z",
+    "ownerLabel": "2",
+    "participants": [
+      "1",
+      "2",
+      "3",
+      "4"
+    ]
+  }
+}

@@ -1,0 +1,70 @@
+[
+  {
+    "scene_id": "21_01",
+    "pair": [
+      "2",
+      "1"
+    ],
+    "prompt_text": "1990년대 한국 친구와 함께 노래방에서 노래를 부르고 있다.",
+    "image_prompt_id": "1dd27e1b-4b90-41a0-99ed-7f433e9a90ab",
+    "video_prompt_id": "eda09089-0948-4757-8d63-e953ca3deff7",
+    "image_path": "/Users/ijieun/CHI 25 LBW/mvp-service/data/sessions/test0114_1/images/21_01.png",
+    "video_path": "/Users/ijieun/CHI 25 LBW/mvp-service/data/sessions/test0114_1/videos/21_01.mp4",
+    "comfy_video": {
+      "filename": "21_01_00001_.mp4",
+      "subfolder": "M2M\\test0114_1\\videos",
+      "type": "output"
+    }
+  },
+  {
+    "scene_id": "21_02",
+    "pair": [
+      "2",
+      "1"
+    ],
+    "prompt_text": "1990년대 한국 친구와 함께 500냥 하우스에서 떡볶이와 김밥을 먹고 있다.",
+    "image_prompt_id": "ac4cfbd4-687a-4306-a3a0-c3c54cbdbae9",
+    "video_prompt_id": "10844055-109f-4fdc-b9ca-ef4c8e60e8a0",
+    "image_path": "/Users/ijieun/CHI 25 LBW/mvp-service/data/sessions/test0114_1/images/21_02.png",
+    "video_path": "/Users/ijieun/CHI 25 LBW/mvp-service/data/sessions/test0114_1/videos/21_02.mp4",
+    "comfy_video": {
+      "filename": "21_02_00001_.mp4",
+      "subfolder": "M2M\\test0114_1\\videos",
+      "type": "output"
+    }
+  },
+  {
+    "scene_id": "23_01",
+    "pair": [
+      "2",
+      "3"
+    ],
+    "prompt_text": "1990년대 한국 친구와 함께 용문산 계곡 근처에서 시예버스를 타고 산행을 하고 있다.",
+    "image_prompt_id": "6986452b-6c43-4bf7-9e5a-63efc22a1bc2",
+    "video_prompt_id": "9c9cab33-0051-4f32-b0da-747bee8e110d",
+    "image_path": "/Users/ijieun/CHI 25 LBW/mvp-service/data/sessions/test0114_1/images/23_01.png",
+    "video_path": "/Users/ijieun/CHI 25 LBW/mvp-service/data/sessions/test0114_1/videos/23_01.mp4",
+    "comfy_video": {
+      "filename": "23_01_00001_.mp4",
+      "subfolder": "M2M\\test0114_1\\videos",
+      "type": "output"
+    }
+  },
+  {
+    "scene_id": "23_02",
+    "pair": [
+      "2",
+      "3"
+    ],
+    "prompt_text": "1990년대 한국 친구와 함께 압구정에서 부대찌개를 먹고 있다.",
+    "image_prompt_id": "209cf784-1ab3-4f3d-b391-4adac4a22dee",
+    "video_prompt_id": "68da3a97-9bd8-4da4-b328-95e58d114bca",
+    "image_path": "/Users/ijieun/CHI 25 LBW/mvp-service/data/sessions/test0114_1/images/23_02.png",
+    "video_path": "/Users/ijieun/CHI 25 LBW/mvp-service/data/sessions/test0114_1/videos/23_02.mp4",
+    "comfy_video": {
+      "filename": "23_02_00001_.mp4",
+      "subfolder": "M2M\\test0114_1\\videos",
+      "type": "output"
+    }
+  }
+]

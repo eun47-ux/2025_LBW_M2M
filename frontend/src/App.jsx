@@ -1767,6 +1767,7 @@ export default function App() {
               <video
                 src={finalVideoUrl}
                 ref={finalVideoRef}
+                controls
                 onPlay={() => {
                   if (ytVideoId) return;
                   const v = finalVideoRef.current;

@@ -1,0 +1,42 @@
+[
+  {
+    "scene_id": "21_01",
+    "pair": [
+      "2",
+      "1"
+    ],
+    "prompt_text": "1990년대 한국 친구와 함께 노래방에서 노래를 부르고 있다.",
+    "image_prompt_id": "1dd27e1b-4b90-41a0-99ed-7f433e9a90ab",
+    "image_path": "/Users/ijieun/CHI 25 LBW/mvp-service/data/sessions/test0114_1/images/21_01.png"
+  },
+  {
+    "scene_id": "21_02",
+    "pair": [
+      "2",
+      "1"
+    ],
+    "prompt_text": "1990년대 한국 친구와 함께 500냥 하우스에서 떡볶이와 김밥을 먹고 있다.",
+    "image_prompt_id": "ac4cfbd4-687a-4306-a3a0-c3c54cbdbae9",
+    "image_path": "/Users/ijieun/CHI 25 LBW/mvp-service/data/sessions/test0114_1/images/21_02.png"
+  },
+  {
+    "scene_id": "23_01",
+    "pair": [
+      "2",
+      "3"
+    ],
+    "prompt_text": "1990년대 한국 친구와 함께 용문산 계곡 근처에서 시예버스를 타고 산행을 하고 있다.",
+    "image_prompt_id": "6986452b-6c43-4bf7-9e5a-63efc22a1bc2",
+    "image_path": "/Users/ijieun/CHI 25 LBW/mvp-service/data/sessions/test0114_1/images/23_01.png"
+  },
+  {
+    "scene_id": "23_02",
+    "pair": [
+      "2",
+      "3"
+    ],
+    "prompt_text": "1990년대 한국 친구와 함께 압구정에서 부대찌개를 먹고 있다.",
+    "image_prompt_id": "209cf784-1ab3-4f3d-b391-4adac4a22dee",
+    "image_path": "/Users/ijieun/CHI 25 LBW/mvp-service/data/sessions/test0114_1/images/23_02.png"
+  }
+]

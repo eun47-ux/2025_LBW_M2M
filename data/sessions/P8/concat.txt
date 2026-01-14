@@ -1,0 +1,6 @@
+file '/Users/ijieun/CHI 25 LBW/mvp-service/data/sessions/P8/videos/21_01.mp4'
+file '/Users/ijieun/CHI 25 LBW/mvp-service/data/sessions/P8/videos/21_02.mp4'
+file '/Users/ijieun/CHI 25 LBW/mvp-service/data/sessions/P8/videos/23_01.mp4'
+file '/Users/ijieun/CHI 25 LBW/mvp-service/data/sessions/P8/videos/23_02.mp4'
+file '/Users/ijieun/CHI 25 LBW/mvp-service/data/sessions/P8/videos/24_01.mp4'
+file '/Users/ijieun/CHI 25 LBW/mvp-service/data/sessions/P8/videos/24_02.mp4'

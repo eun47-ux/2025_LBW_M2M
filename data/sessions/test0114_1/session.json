@@ -1,0 +1,70 @@
+{
+  "sessionId": "test0114_1",
+  "createdAt": "2026-01-13T18:23:49.193Z",
+  "ownerId": "l0ydp8o9",
+  "labelMap": {
+    "1": "t9k4i1t9",
+    "2": "l0ydp8o9",
+    "3": "70gnx898"
+  },
+  "cropMetaArr": [
+    {
+      "id": "t9k4i1t9",
+      "rect": {
+        "x": 11,
+        "y": 146,
+        "width": 234,
+        "height": 305
+      }
+    },
+    {
+      "id": "l0ydp8o9",
+      "rect": {
+        "x": 191,
+        "y": 149,
+        "width": 234,
+        "height": 302
+      }
+    },
+    {
+      "id": "70gnx898",
+      "rect": {
+        "x": 357,
+        "y": 144,
+        "width": 234,
+        "height": 307
+      }
+    }
+  ],
+  "originalSavedName": "original.png",
+  "updatedAt": "2026-01-13T18:24:22.832Z",
+  "labels": {
+    "filename": "labels.json",
+    "path": "/Users/ijieun/CHI 25 LBW/mvp-service/data/sessions/test0114_1/labels.json",
+    "createdAt": "2026-01-13T18:24:23.347Z"
+  },
+  "audio": {
+    "filename": "recording.m4a",
+    "path": "/Users/ijieun/CHI 25 LBW/mvp-service/data/sessions/test0114_1/audio/recording.m4a",
+    "uploadedAt": "2026-01-13T18:24:46.701Z",
+    "mimetype": "audio/x-m4a",
+    "size": 7329303
+  },
+  "transcript": {
+    "filename": "transcript.txt",
+    "path": "/Users/ijieun/CHI 25 LBW/mvp-service/data/sessions/test0114_1/transcript.txt",
+    "createdAt": "2026-01-13T18:26:13.876Z",
+    "audioUsed": "recording.m4a"
+  },
+  "scenes": {
+    "filename": "scenes.json",
+    "path": "/Users/ijieun/CHI 25 LBW/mvp-service/data/sessions/test0114_1/scenes.json",
+    "createdAt": "2026-01-13T18:27:04.388Z",
+    "ownerLabel": "2",
+    "participants": [
+      "1",
+      "2",
+      "3"
+    ]
+  }
+}

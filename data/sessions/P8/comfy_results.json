@@ -1,0 +1,146 @@
+[
+  {
+    "scene_id": "21_01",
+    "pair": [
+      "2",
+      "1"
+    ],
+    "prompt_text": "1980년대 한국 친구와 함께 마로니에 공원에서 사진을 찍고 있다.",
+    "video_prompt_id": "5a0dcbd0-aa0a-4c5e-bacc-b530a59807d8",
+    "image_path": "/Users/ijieun/CHI 25 LBW/mvp-service/data/sessions/P8/images/21_01.png",
+    "comfy_video": {
+      "filename": "21_01_00001_.mp4",
+      "subfolder": "M2M\\P8\\videos",
+      "type": "output"
+    }
+  },
+  {
+    "scene_id": "21_01",
+    "pair": [
+      "2",
+      "1"
+    ],
+    "prompt_text": "1980년대 한국 친구와 함께 마로니에 공원에서 사진을 찍고 있다.",
+    "error": "Cannot find package 'firebase-admin' imported from /Users/ijieun/CHI 25 LBW/mvp-service/backend/services/firestoreService.js"
+  },
+  {
+    "scene_id": "21_02",
+    "pair": [
+      "2",
+      "1"
+    ],
+    "prompt_text": "1980년대 한국 친구와 함께 대학로에서 카페에서 커피를 마시고 있다.",
+    "video_prompt_id": "c33798d2-4596-4f3f-91ad-4efffda5bf2b",
+    "image_path": "/Users/ijieun/CHI 25 LBW/mvp-service/data/sessions/P8/images/21_02.png",
+    "comfy_video": {
+      "filename": "21_02_00001_.mp4",
+      "subfolder": "M2M\\P8\\videos",
+      "type": "output"
+    }
+  },
+  {
+    "scene_id": "21_02",
+    "pair": [
+      "2",
+      "1"
+    ],
+    "prompt_text": "1980년대 한국 친구와 함께 대학로에서 카페에서 커피를 마시고 있다.",
+    "error": "Cannot find package 'firebase-admin' imported from /Users/ijieun/CHI 25 LBW/mvp-service/backend/services/firestoreService.js"
+  },
+  {
+    "scene_id": "23_01",
+    "pair": [
+      "2",
+      "3"
+    ],
+    "prompt_text": "1980년대 한국 친구와 함께 당국대 앞에서 버스에서 함께 기다리고 있다.",
+    "video_prompt_id": "90d18da6-63cf-4afa-956a-d7550cf787ef",
+    "image_path": "/Users/ijieun/CHI 25 LBW/mvp-service/data/sessions/P8/images/23_01.png",
+    "comfy_video": {
+      "filename": "23_01_00001_.mp4",
+      "subfolder": "M2M\\P8\\videos",
+      "type": "output"
+    }
+  },
+  {
+    "scene_id": "23_01",
+    "pair": [
+      "2",
+      "3"
+    ],
+    "prompt_text": "1980년대 한국 친구와 함께 당국대 앞에서 버스에서 함께 기다리고 있다.",
+    "error": "Cannot find package 'firebase-admin' imported from /Users/ijieun/CHI 25 LBW/mvp-service/backend/services/firestoreService.js"
+  },
+  {
+    "scene_id": "23_02",
+    "pair": [
+      "2",
+      "3"
+    ],
+    "prompt_text": "1980년대 한국 친구와 함께 창경원에서 벚꽃 놀이를 하고 있다.",
+    "video_prompt_id": "923462bb-c545-43ac-8d47-f7088d8e6adc",
+    "image_path": "/Users/ijieun/CHI 25 LBW/mvp-service/data/sessions/P8/images/23_02.png",
+    "comfy_video": {
+      "filename": "23_02_00001_.mp4",
+      "subfolder": "M2M\\P8\\videos",
+      "type": "output"
+    }
+  },
+  {
+    "scene_id": "23_02",
+    "pair": [
+      "2",
+      "3"
+    ],
+    "prompt_text": "1980년대 한국 친구와 함께 창경원에서 벚꽃 놀이를 하고 있다.",
+    "error": "Cannot find package 'firebase-admin' imported from /Users/ijieun/CHI 25 LBW/mvp-service/backend/services/firestoreService.js"
+  },
+  {
+    "scene_id": "24_01",
+    "pair": [
+      "2",
+      "4"
+    ],
+    "prompt_text": "1980년대 한국 친구와 함께 옷을 입혀보고 있다.",
+    "video_prompt_id": "c54c0377-4296-41fa-beef-01aca1ed1d1e",
+    "image_path": "/Users/ijieun/CHI 25 LBW/mvp-service/data/sessions/P8/images/24_01.png",
+    "comfy_video": {
+      "filename": "24_01_00001_.mp4",
+      "subfolder": "M2M\\P8\\videos",
+      "type": "output"
+    }
+  },
+  {
+    "scene_id": "24_01",
+    "pair": [
+      "2",
+      "4"
+    ],
+    "prompt_text": "1980년대 한국 친구와 함께 옷을 입혀보고 있다.",
+    "error": "Cannot find package 'firebase-admin' imported from /Users/ijieun/CHI 25 LBW/mvp-service/backend/services/firestoreService.js"
+  },
+  {
+    "scene_id": "24_02",
+    "pair": [
+      "2",
+      "4"
+    ],
+    "prompt_text": "1980년대 한국 친구와 함께 광장시장에 가서 옷감을 고르고 있다.",
+    "video_prompt_id": "4fd0fdee-ffde-4f62-bdaf-8cb86829a07c",
+    "image_path": "/Users/ijieun/CHI 25 LBW/mvp-service/data/sessions/P8/images/24_02.png",
+    "comfy_video": {
+      "filename": "24_02_00001_.mp4",
+      "subfolder": "M2M\\P8\\videos",
+      "type": "output"
+    }
+  },
+  {
+    "scene_id": "24_02",
+    "pair": [
+      "2",
+      "4"
+    ],
+    "prompt_text": "1980년대 한국 친구와 함께 광장시장에 가서 옷감을 고르고 있다.",
+    "error": "Cannot find package 'firebase-admin' imported from /Users/ijieun/CHI 25 LBW/mvp-service/backend/services/firestoreService.js"
+  }
+]
