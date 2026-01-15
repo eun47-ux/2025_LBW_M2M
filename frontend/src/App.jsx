@@ -333,72 +333,108 @@ export default function App() {
 
   // ---- Sync final.mp4 play/pause with YouTube audio ----
   useEffect(() => {
-    const video = finalVideoRef.current;
-    if (!video) return undefined;
+    if (!finalVideoUrl) return undefined;
 
-    const handlePlay = () => {
-      if (!ytPlayerRef.current) return;
-      if (!ytReadyRef.current) {
-        ytPendingPlayRef.current = true;
+    let timeoutId = null;
+    let cleanupFn = null;
+    let retryCount = 0;
+    const MAX_RETRIES = 50; // 최대 5초 (50 * 100ms)
+
+    // 비디오 요소가 마운트될 때까지 기다리는 함수
+    const setupEventListeners = () => {
+      const video = finalVideoRef.current;
+      if (!video) {
+        retryCount++;
+        if (retryCount < MAX_RETRIES) {
+          // 비디오 요소가 아직 없으면 100ms 후 재시도
+          timeoutId = setTimeout(setupEventListeners, 100);
+        }
         return;
       }
-      // 페이드 상태 리셋
-      ytFadeIntervalRef.current = null;
-      if (!ytHasStartedRef.current) {
-        ytPlayerRef.current.seekTo(YT_START_SECONDS, true);
-        ytHasStartedRef.current = true;
-      }
-      // 페이드 인과 함께 재생
-      ytPlayerRef.current.playVideo();
-      fadeInYouTube(ytPlayerRef.current);
-    };
-    const handlePause = () => {
-      if (!ytPlayerRef.current || !ytReadyRef.current) return;
-      // 페이드 아웃 후 일시정지
-      fadeOutYouTube(ytPlayerRef.current, () => {
-        if (ytPlayerRef.current && ytReadyRef.current) {
-          ytPlayerRef.current.pauseVideo();
+
+      const handlePlay = () => {
+        if (!ytPlayerRef.current) return;
+        if (!ytReadyRef.current) {
+          ytPendingPlayRef.current = true;
+          return;
         }
-      });
-    };
-    const handleEnded = () => {
-      if (!ytPlayerRef.current || !ytReadyRef.current) return;
-      // 페이드 상태 리셋
-      ytFadeIntervalRef.current = null;
-      // 페이드 아웃 후 초기화
-      fadeOutYouTube(ytPlayerRef.current, () => {
-        if (ytPlayerRef.current && ytReadyRef.current) {
-          ytPlayerRef.current.pauseVideo();
+        // 페이드 상태 리셋
+        ytFadeIntervalRef.current = null;
+        if (!ytHasStartedRef.current) {
           ytPlayerRef.current.seekTo(YT_START_SECONDS, true);
+          ytHasStartedRef.current = true;
         }
-      });
-    };
-    
-    // 비디오 종료 0.5초 전에 페이드 아웃 시작
-    const handleTimeUpdate = () => {
-      if (!ytPlayerRef.current || !ytReadyRef.current) return;
-      if (!video.duration) return;
+        // 페이드 인과 함께 재생
+        ytPlayerRef.current.playVideo();
+        fadeInYouTube(ytPlayerRef.current);
+      };
+      const handlePause = () => {
+        if (!ytPlayerRef.current || !ytReadyRef.current) return;
+        // 페이드 아웃 후 일시정지
+        fadeOutYouTube(ytPlayerRef.current, () => {
+          if (ytPlayerRef.current && ytReadyRef.current) {
+            ytPlayerRef.current.pauseVideo();
+          }
+        });
+      };
+      const handleEnded = () => {
+        if (!ytPlayerRef.current || !ytReadyRef.current) return;
+        // 페이드 상태 리셋
+        ytFadeIntervalRef.current = null;
+        // 페이드 아웃 후 초기화
+        fadeOutYouTube(ytPlayerRef.current, () => {
+          if (ytPlayerRef.current && ytReadyRef.current) {
+            ytPlayerRef.current.pauseVideo();
+            ytPlayerRef.current.seekTo(YT_START_SECONDS, true);
+          }
+        });
+      };
       
-      const remaining = video.duration - video.currentTime;
-      if (remaining <= FADE_DURATION_MS / 1000 && remaining > 0.1) {
-        // 페이드 아웃 시작 (한 번만)
-        if (!ytFadeIntervalRef.current) {
-          fadeOutYouTube(ytPlayerRef.current);
-          ytFadeIntervalRef.current = true;
+      // 비디오 종료 0.5초 전에 페이드 아웃 시작
+      const handleTimeUpdate = () => {
+        if (!ytPlayerRef.current || !ytReadyRef.current) return;
+        if (!video.duration) return;
+        
+        const remaining = video.duration - video.currentTime;
+        if (remaining <= FADE_DURATION_MS / 1000 && remaining > 0.1) {
+          // 페이드 아웃 시작 (한 번만)
+          if (!ytFadeIntervalRef.current) {
+            fadeOutYouTube(ytPlayerRef.current);
+            ytFadeIntervalRef.current = true;
+          }
         }
-      }
+      };
+
+      video.addEventListener("play", handlePlay);
+      video.addEventListener("pause", handlePause);
+      video.addEventListener("ended", handleEnded);
+      video.addEventListener("timeupdate", handleTimeUpdate);
+
+      cleanupFn = () => {
+        video.removeEventListener("play", handlePlay);
+        video.removeEventListener("pause", handlePause);
+        video.removeEventListener("ended", handleEnded);
+        video.removeEventListener("timeupdate", handleTimeUpdate);
+        // 페이드 인터벌 정리
+        if (window.ytFadeInterval) {
+          clearInterval(window.ytFadeInterval);
+          window.ytFadeInterval = null;
+        }
+      };
     };
 
-    video.addEventListener("play", handlePlay);
-    video.addEventListener("pause", handlePause);
-    video.addEventListener("ended", handleEnded);
-    video.addEventListener("timeupdate", handleTimeUpdate);
-
+    // 이벤트 리스너 설정 시작
+    setupEventListeners();
+    
     return () => {
-      video.removeEventListener("play", handlePlay);
-      video.removeEventListener("pause", handlePause);
-      video.removeEventListener("ended", handleEnded);
-      video.removeEventListener("timeupdate", handleTimeUpdate);
+      // timeout 정리
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+      // cleanup 함수 실행
+      if (cleanupFn) {
+        cleanupFn();
+      }
       // 페이드 인터벌 정리
       if (window.ytFadeInterval) {
         clearInterval(window.ytFadeInterval);
@@ -1309,7 +1345,6 @@ export default function App() {
       </div>
       )}
 
-      <hr style={{ margin: "20px 0" }} />
 
       {/* 4단계: 영상 생성 */}
       {currentStep === 4 && (
