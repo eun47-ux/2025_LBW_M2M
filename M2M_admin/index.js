@@ -153,6 +153,6 @@ app.post("/api/session/:sessionId/regenerate/:sceneId", async (req, res) => {
 // ===============================
 // Start server
 // ===============================
-app.listen(PORT, () => {
-  console.log(`✅ M2M Admin server running on http://localhost:${PORT}`);
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`✅ M2M Admin server running on http://0.0.0.0:${PORT}`);
 });

@@ -1,15 +1,4 @@
 {
-  "1": {
-    "inputs": {
-      "temperature": 0.5,
-      "modalities": "image+text",
-      "aspect_ratio": "auto"
-    },
-    "class_type": "AV_NanoBananaApiConfig",
-    "_meta": {
-      "title": "NanoBanana API Config"
-    }
-  },
   "2": {
     "inputs": {
       "samples": [
@@ -42,13 +31,13 @@
   "4": {
     "inputs": {
       "add_noise": "disable",
-      "noise_seed": 400,
+      "noise_seed": 0,
       "steps": 4,
       "cfg": 1,
       "sampler_name": "euler",
       "scheduler": "simple",
       "start_at_step": 2,
-      "end_at_step": 4,
+      "end_at_step": 1000,
       "return_with_leftover_noise": "disable",
       "model": [
         "6",
@@ -109,8 +98,8 @@
   },
   "8": {
     "inputs": {
-      "lora_name": "wan2.2_i2v_lightx2v_4steps_lora_v1_low_noise.safetensors",
-      "strength_model": 1.1500000000000001,
+      "lora_name": "lightx2v_I2V_14B_480p_cfg_step_distill_rank256_bf16.safetensors",
+      "strength_model": 1.5000000000000002,
       "model": [
         "16",
         0
@@ -123,8 +112,8 @@
   },
   "9": {
     "inputs": {
-      "lora_name": "wan2.2_i2v_lightx2v_4steps_lora_v1_low_noise.safetensors",
-      "strength_model": 1.1500000000000001,
+      "lora_name": "lightx2v_I2V_14B_480p_cfg_step_distill_rank256_bf16.safetensors",
+      "strength_model": 1.5000000000000002,
       "model": [
         "11",
         0
@@ -158,7 +147,7 @@
   },
   "12": {
     "inputs": {
-      "text": "오른쪽 두 사람이 함께 분식집에서 떡볶이를 먹고 있는 장면 시대 배경은 1980년대 대한민국 서울",
+      "text": "三个朋友在小吃店一起吃炒年糕的场景。故事背景设定在20世纪80年代的韩国首尔。",
       "speak_and_recognation": {
         "__value__": [
           false,
@@ -193,7 +182,7 @@
   "14": {
     "inputs": {
       "add_noise": "enable",
-      "noise_seed": 400,
+      "noise_seed": 976460285248514,
       "steps": 4,
       "cfg": 1,
       "sampler_name": "euler",
@@ -225,7 +214,7 @@
   },
   "15": {
     "inputs": {
-      "text": "low quality, blurry, haze, low contrast, overexposed, fade, moving perspective, extra limbs or hands, overlay pattern, double exposure, text, watermark, logo, typography",
+      "text": "色调艳丽，过曝，静态，细节模糊不清，字幕，风格，作品，画作，画面，静止，整体发灰，最差质量，低质量，JPEG压缩残留，丑陋的，残缺的，多余的手指，画得不好的手部，画得不好的脸部，畸形的，毁容的，形态畸形的肢体，手指融合，静止不动的画面，杂乱的背景，三条腿，背景人很多，倒着走",
       "speak_and_recognation": {
         "__value__": [
           false,
@@ -256,7 +245,7 @@
     "inputs": {
       "width": 640,
       "height": 368,
-      "length": 121,
+      "length": 161,
       "batch_size": 1,
       "positive": [
         "12",
@@ -282,7 +271,7 @@
   },
   "18": {
     "inputs": {
-      "image": "분식2.png"
+      "image": "분식1.png"
     },
     "class_type": "LoadImage",
     "_meta": {
