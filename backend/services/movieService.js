@@ -25,13 +25,17 @@ function joinUrl(base, subpath) {
 
 // ---- Helpers: original image + video meta ----
 function findOriginalImage(sessionPath) {
+  console.log(`[DEBUG] findOriginalImage 시작: ${sessionPath}`);
+  
   const candidates = [
     "original.png",
     "original.jpg",
     "original.jpeg",
+    "original.jfif", // jfif도 지원
     "photo.png",
     "photo.jpg",
     "photo.jpeg",
+    "photo.jfif", // jfif도 지원
   ];
 
   const sessionJsonPath = path.join(sessionPath, "session.json");
@@ -40,18 +44,27 @@ function findOriginalImage(sessionPath) {
       const session = JSON.parse(fs.readFileSync(sessionJsonPath, "utf-8"));
       if (session.originalSavedName) {
         const p = path.join(sessionPath, session.originalSavedName);
-        if (fs.existsSync(p)) return p;
+        if (fs.existsSync(p)) {
+          console.log(`[DEBUG] original 이미지 발견 (session.json): ${p}`);
+          return p;
+        } else {
+          console.log(`[DEBUG] session.json에 명시된 파일이 없음: ${p}`);
+        }
       }
-    } catch {
-      // ignore malformed session.json
+    } catch (e) {
+      console.warn(`[DEBUG] session.json 파싱 실패: ${e.message}`);
     }
   }
 
   for (const c of candidates) {
     const p = path.join(sessionPath, c);
-    if (fs.existsSync(p)) return p;
+    if (fs.existsSync(p)) {
+      console.log(`[DEBUG] original 이미지 발견 (candidates): ${p}`);
+      return p;
+    }
   }
 
+  console.warn(`[DEBUG] original 이미지를 찾을 수 없음: ${sessionPath}`);
   return null;
 }
 
@@ -133,19 +146,42 @@ async function createZoomClip({
     "-vf",
     filter,
     "-c:v",
-    "libopenh264",
+    "libx264",
     "-pix_fmt",
     "yuv420p",
+    "-preset",
+    "fast",
+    "-crf",
+    "23",
     outPath,
   ];
 
   await new Promise((resolve, reject) => {
-    const proc = spawn("ffmpeg", args, { stdio: "inherit" });
-    proc.on("close", (code) => {
-      if (code === 0) resolve();
-      else reject(new Error(`ffmpeg (zoom clip) exited with code ${code}`));
+    const proc = spawn("ffmpeg", args, { stdio: ["ignore", "pipe", "pipe"] });
+    let stdout = "";
+    let stderr = "";
+    
+    proc.stdout.on("data", (d) => {
+      stdout += d.toString();
     });
-    proc.on("error", reject);
+    
+    proc.stderr.on("data", (d) => {
+      stderr += d.toString();
+    });
+    
+    proc.on("close", (code) => {
+      if (code === 0) {
+        resolve();
+      } else {
+        console.error(`[DEBUG] ffmpeg stderr: ${stderr}`);
+        reject(new Error(`ffmpeg (zoom clip) exited with code ${code}. stderr: ${stderr.slice(-500)}`));
+      }
+    });
+    
+    proc.on("error", (err) => {
+      console.error(`[DEBUG] ffmpeg spawn error:`, err);
+      reject(err);
+    });
   });
 
   return outPath;
@@ -209,17 +245,37 @@ async function concatVideoFilesReencode(videoPaths, outPath, { width, height, fp
         "-vf",
         filter,
         "-c:v",
-        "libopenh264",
+        "libx264",
         "-pix_fmt",
         "yuv420p",
+        "-preset",
+        "fast",
+        "-crf",
+        "23",
         outPath,
       ],
-      { stdio: "inherit" }
+      { stdio: ["ignore", "pipe", "pipe"] }
     );
+    
+    let stdout = "";
+    let stderr = "";
+    
+    proc.stdout.on("data", (d) => {
+      stdout += d.toString();
+    });
+    
+    proc.stderr.on("data", (d) => {
+      stderr += d.toString();
+    });
+    
     proc.on("close", (code) => {
       if (code === 0) resolve();
-      else reject(new Error(`ffmpeg exited with code ${code}`));
+      else {
+        console.error(`[DEBUG] ffmpeg concat stderr: ${stderr}`);
+        reject(new Error(`ffmpeg exited with code ${code}. stderr: ${stderr.slice(-500)}`));
+      }
     });
+    
     proc.on("error", reject);
   });
 
@@ -346,13 +402,19 @@ export async function concatVideos(sessionId) {
   let concatMeta = null;
   let needsReencode = false;
   try {
+    console.log(`[DEBUG] intro/outro 생성 시작`);
     const originalPath = findOriginalImage(sessionPath);
-    if (originalPath) {
+    if (!originalPath) {
+      console.warn(`[DEBUG] original 이미지를 찾을 수 없어 intro/outro 생성을 건너뜁니다.`);
+    } else {
+      console.log(`[DEBUG] original 이미지 경로: ${originalPath}`);
       const meta = await getVideoMeta(downloaded[0].path);
+      console.log(`[DEBUG] 비디오 메타: ${JSON.stringify(meta)}`);
       concatMeta = meta;
       introPath = path.join(videosDir, "intro.mp4");
       outroPath = path.join(videosDir, "outro.mp4");
 
+      console.log(`[DEBUG] intro 클립 생성 시작: ${introPath}`);
       await createZoomClip({
         imagePath: originalPath,
         outPath: introPath,
@@ -363,7 +425,9 @@ export async function concatVideos(sessionId) {
         zoomStart: INTRO_ZOOM_START,
         zoomEnd: INTRO_ZOOM_END,
       });
+      console.log(`[DEBUG] intro 클립 생성 완료`);
 
+      console.log(`[DEBUG] outro 클립 생성 시작: ${outroPath}`);
       await createZoomClip({
         imagePath: originalPath,
         outPath: outroPath,
@@ -374,12 +438,14 @@ export async function concatVideos(sessionId) {
         zoomStart: OUTRO_ZOOM_START,
         zoomEnd: OUTRO_ZOOM_END,
       });
+      console.log(`[DEBUG] outro 클립 생성 완료`);
 
       // intro/outro is re-encoded, so concat needs re-encode for compatibility
       needsReencode = true;
     }
   } catch (e) {
     console.warn(`⚠️ intro/outro generation skipped: ${e.message}`);
+    console.error(`[DEBUG] intro/outro 생성 에러 상세:`, e);
     introPath = null;
     outroPath = null;
     concatMeta = null;
