@@ -288,5 +288,14 @@ export async function runImageScenes(sessionId) {
 
   const outPath = path.join(sessionDir, "image_results.json");
   fs.writeFileSync(outPath, JSON.stringify(results, null, 2), "utf-8");
+
+  // Firestore에 scenes.json 업로드
+  try {
+    const { uploadScenes } = await import("./firestoreService.js");
+    await uploadScenes(sessionId, scenesJson);
+  } catch (e) {
+    console.warn(`⚠️ scenes.json 업로드 실패: ${e.message}`);
+  }
+
   return { outPath, results };
 }

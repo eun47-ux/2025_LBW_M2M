@@ -1,0 +1,66 @@
+[
+  {
+    "scene_id": "21_01",
+    "pair": [
+      "2",
+      "1"
+    ],
+    "prompt_text": "1990년대 한국 친구와 함께 노래방에서 노래를 부르고 있다.",
+    "image_prompt_id": "5f6328b4-57d8-485d-95a7-1149e51e6241",
+    "video_prompt_id": "a9818ad1-bff1-4942-8dd4-d39211d72b08",
+    "image_path": "/Users/ijieun/CHI 25 LBW/mvp-service/data/sessions/TEST00/images/21_01.png",
+    "comfy_video": {
+      "filename": "21_01_00001_.mp4",
+      "subfolder": "M2M\\TEST00\\videos",
+      "type": "output"
+    }
+  },
+  {
+    "scene_id": "21_02",
+    "pair": [
+      "2",
+      "1"
+    ],
+    "prompt_text": "1990년대 한국 친구와 함께 현대백화점에서 밥을 먹고 쇼핑을 구경하고 있다.",
+    "image_prompt_id": "e18b2e79-74e1-4502-bb1f-3c361004164b",
+    "video_prompt_id": "ce8b448e-992c-4591-8533-996b546ab408",
+    "image_path": "/Users/ijieun/CHI 25 LBW/mvp-service/data/sessions/TEST00/images/21_02.png",
+    "comfy_video": {
+      "filename": "21_02_00001_.mp4",
+      "subfolder": "M2M\\TEST00\\videos",
+      "type": "output"
+    }
+  },
+  {
+    "scene_id": "23_01",
+    "pair": [
+      "2",
+      "3"
+    ],
+    "prompt_text": "1990년대 한국 친구와 함께 500명 하우스에서 떡볶이와 김밥을 먹고 있다.",
+    "image_prompt_id": "18aa15f1-9528-41d8-80fb-70aeeb6aba1b",
+    "video_prompt_id": "c80de038-de08-4109-955c-5e5ae724d966",
+    "image_path": "/Users/ijieun/CHI 25 LBW/mvp-service/data/sessions/TEST00/images/23_01.png",
+    "comfy_video": {
+      "filename": "23_01_00001_.mp4",
+      "subfolder": "M2M\\TEST00\\videos",
+      "type": "output"
+    }
+  },
+  {
+    "scene_id": "23_02",
+    "pair": [
+      "2",
+      "3"
+    ],
+    "prompt_text": "1990년대 한국 친구와 함께 압구정에서 부대찌개를 먹고 있다.",
+    "image_prompt_id": "c0b8bbc2-a089-4fc1-8fee-bb54e40d45b8",
+    "video_prompt_id": "92907abe-3d83-4bed-b52e-49c7978735ae",
+    "image_path": "/Users/ijieun/CHI 25 LBW/mvp-service/data/sessions/TEST00/images/23_02.png",
+    "comfy_video": {
+      "filename": "23_02_00001_.mp4",
+      "subfolder": "M2M\\TEST00\\videos",
+      "type": "output"
+    }
+  }
+]

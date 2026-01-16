@@ -167,3 +167,88 @@ export async function getVideoUrls(sessionId) {
     return {};
   }
 }
+
+/**
+ * scenes.json 업로드
+ * Firestore 구조: SessionID/scenes/scenesData (필드)
+ */
+export async function uploadScenes(sessionId, scenesJson) {
+  const firestore = initFirestore();
+  if (!firestore) {
+    console.warn("⚠️ Firestore가 초기화되지 않아 scenes.json 업로드를 건너뜁니다.");
+    return { ok: false, skipped: true };
+  }
+
+  try {
+    const scenesRef = firestore.collection(sessionId).doc("scenes");
+    await scenesRef.set(
+      {
+        scenesData: scenesJson,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
+
+    console.log(`✅ scenes.json 업로드 완료: ${sessionId}`);
+    return { ok: true };
+  } catch (e) {
+    console.error(`❌ scenes.json 업로드 실패 (${sessionId}):`, e.message);
+    return { ok: false, error: e.message };
+  }
+}
+
+/**
+ * Firestore에서 scenes.json 가져오기
+ * Firestore 구조: SessionID/scenes/scenesData (필드)
+ */
+export async function getScenes(sessionId) {
+  const firestore = initFirestore();
+  if (!firestore) {
+    console.warn("⚠️ Firestore가 초기화되지 않아 scenes.json을 가져올 수 없습니다.");
+    return null;
+  }
+
+  try {
+    const scenesRef = firestore.collection(sessionId).doc("scenes");
+    const doc = await scenesRef.get();
+
+    if (!doc.exists) {
+      return null;
+    }
+
+    const data = doc.data();
+    return data.scenesData || null;
+  } catch (e) {
+    console.error(`❌ scenes.json 가져오기 실패 (${sessionId}):`, e.message);
+    return null;
+  }
+}
+
+/**
+ * scenes.json 업데이트
+ * Firestore 구조: SessionID/scenes/scenesData (필드)
+ */
+export async function updateScenes(sessionId, scenesJson) {
+  const firestore = initFirestore();
+  if (!firestore) {
+    console.warn("⚠️ Firestore가 초기화되지 않아 scenes.json 업데이트를 건너뜁니다.");
+    return { ok: false, skipped: true };
+  }
+
+  try {
+    const scenesRef = firestore.collection(sessionId).doc("scenes");
+    await scenesRef.set(
+      {
+        scenesData: scenesJson,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
+
+    console.log(`✅ scenes.json 업데이트 완료: ${sessionId}`);
+    return { ok: true };
+  } catch (e) {
+    console.error(`❌ scenes.json 업데이트 실패 (${sessionId}):`, e.message);
+    return { ok: false, error: e.message };
+  }
+}

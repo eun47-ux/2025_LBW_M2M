@@ -126,6 +126,14 @@ export async function generateScenes(sessionId) {
   };
   fs.writeFileSync(sessionJsonPath, JSON.stringify(session, null, 2), "utf-8");
 
+  // Firestore에 scenes.json 업로드 (생성 직후)
+  try {
+    const { uploadScenes } = await import("./firestoreService.js");
+    await uploadScenes(sessionId, out.scenesJson);
+  } catch (e) {
+    console.warn(`⚠️ scenes.json 업로드 실패: ${e.message}`);
+  }
+
   const pairs = out.scenesJson?.pairs || [];
   const flatScenes = out.scenesJson?.scenes || [];
   const scenesPreviewCount = pairs.length

@@ -192,5 +192,16 @@ export async function runVideoScenes(sessionId) {
   const { uploadComfyResults } = await import("./firestoreService.js");
   await uploadComfyResults(sessionId, results);
 
+  // Firestore에 scenes.json 업로드 (이미 있으면 스킵)
+  try {
+    const { uploadScenes, getScenes } = await import("./firestoreService.js");
+    const existingScenes = await getScenes(sessionId);
+    if (!existingScenes) {
+      await uploadScenes(sessionId, scenesJson);
+    }
+  } catch (e) {
+    console.warn(`⚠️ scenes.json 업로드 실패: ${e.message}`);
+  }
+
   return { outPath, results };
 }

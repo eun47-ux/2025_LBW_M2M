@@ -113,6 +113,56 @@
       margin-bottom: 12px;
       background: #000;
     }
+    img {
+      width: 100%;
+      max-width: 100%;
+      border-radius: 6px;
+      margin-bottom: 12px;
+      background: #f0f0f0;
+    }
+    .scene-card {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 16px;
+      background: white;
+      margin-bottom: 16px;
+    }
+    .scene-card textarea {
+      width: 100%;
+      min-height: 80px;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 13px;
+      font-family: inherit;
+      resize: vertical;
+      margin-bottom: 12px;
+    }
+    .save-scene-btn {
+      padding: 8px 16px;
+      background: #2196F3;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      margin-right: 8px;
+    }
+    .save-scene-btn:hover:not(:disabled) {
+      background: #1976D2;
+    }
+    .regenerate-image-btn {
+      padding: 8px 16px;
+      background: #ff9800;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .regenerate-image-btn:hover:not(:disabled) {
+      background: #f57c00;
+    }
     .regenerate-btn {
       width: 100%;
       padding: 10px;
@@ -130,7 +180,7 @@
       background: #ccc;
     }
     .refresh-btn {
-      width: 100%;
+      width: 40px;
       padding: 10px;
       background: #4CAF50;
       color: white;
@@ -138,12 +188,33 @@
       border-radius: 6px;
       cursor: pointer;
       font-weight: 600;
-      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
     .refresh-btn:hover:not(:disabled) {
       background: #45a049;
     }
     .refresh-btn:disabled {
+      background: #ccc;
+    }
+    .refresh-image-btn {
+      width: 40px;
+      padding: 10px;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .refresh-image-btn:hover:not(:disabled) {
+      background: #45a049;
+    }
+    .refresh-image-btn:disabled {
       background: #ccc;
     }
     .button-group {
@@ -189,9 +260,25 @@
       <div id="loadStatus"></div>
     </div>
 
-    <!-- 3단계: 비디오 미리보기 및 재생성 -->
+    <!-- 3단계: 씬 편집 -->
     <div class="section">
-      <h2>3단계: 비디오 미리보기 및 재생성</h2>
+      <h2>3단계: 씬 편집</h2>
+      <div id="scenesContainer">
+        <p style="color: #999;">먼저 세션 ID를 입력하고 DB 로드를 완료하세요.</p>
+      </div>
+    </div>
+
+    <!-- 4단계: 이미지 미리보기 및 재생성 -->
+    <div class="section">
+      <h2>4단계: 이미지 미리보기 및 재생성</h2>
+      <div id="imagesContainer">
+        <p style="color: #999;">먼저 세션 ID를 입력하고 DB 로드를 완료하세요.</p>
+      </div>
+    </div>
+
+    <!-- 5단계: 비디오 미리보기 및 재생성 -->
+    <div class="section">
+      <h2>5단계: 비디오 미리보기 및 재생성</h2>
       <div id="videosContainer">
         <p style="color: #999;">먼저 세션 ID를 입력하고 DB 로드를 완료하세요.</p>
       </div>
@@ -202,6 +289,8 @@
     const API_BASE = "http://localhost:3002";
     let currentSessionId = null;
     let videosData = [];
+    let scenesData = null;
+    let imagesData = [];
 
     // 세션 생성
     document.getElementById("createSessionBtn").addEventListener("click", async () => {
@@ -259,6 +348,16 @@
 
         showStatus("loadStatus", `✅ DB 로드 완료! 이미지 ${json.downloadedImages?.length || 0}개 다운로드됨`, "success");
         
+        // 씬 데이터 로드
+        scenesData = json.scenesJson;
+        if (scenesData) {
+          renderScenes();
+        }
+        
+        // 이미지 목록 가져오기
+        imagesData = json.downloadedImages || [];
+        renderImages();
+        
         // 비디오 목록 가져오기
         await loadVideos();
         
@@ -271,6 +370,312 @@
         btn.textContent = "DB 로드";
       }
     });
+
+    // 씬 렌더링
+    function renderScenes() {
+      const container = document.getElementById("scenesContainer");
+      
+      if (!scenesData || !scenesData.scenes || !scenesData.scenes.length) {
+        container.innerHTML = "<p style='color: #999;'>씬이 없습니다.</p>";
+        return;
+      }
+
+      container.innerHTML = '<div class="videos-grid"></div>';
+      const grid = container.querySelector(".videos-grid");
+
+      scenesData.scenes.forEach((scene) => {
+        const card = document.createElement("div");
+        card.className = "scene-card";
+        card.setAttribute("data-scene-id", scene.scene_id);
+        card.innerHTML = `
+          <label style="display: block; margin-bottom: 6px; font-weight: 600; font-size: 12px;">씬 ID:</label>
+          <input type="text" class="scene-id-input" data-scene-id="${scene.scene_id}" value="${scene.scene_id}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; margin-bottom: 12px;">
+          <p>Pair: ${scene.pair?.join(", ") || ""}</p>
+          <label style="display: block; margin-bottom: 6px; font-weight: 600; font-size: 12px;">씬 텍스트:</label>
+          <textarea class="scene-text-input" data-scene-id="${scene.scene_id}">${scene.scene_text || ""}</textarea>
+          <div class="button-group">
+            <button class="save-scene-btn" data-scene-id="${scene.scene_id}">💾 씬 저장</button>
+            <button class="regenerate-image-btn" data-scene-id="${scene.scene_id}">🖼️ 이미지 재생성</button>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+
+      // 이벤트 위임으로 버튼 클릭 처리
+      container.addEventListener("click", async (e) => {
+        const saveBtn = e.target.closest(".save-scene-btn");
+        if (saveBtn) {
+          const sceneId = saveBtn.dataset.sceneId;
+          await saveScene(sceneId);
+          return;
+        }
+
+        const regenerateBtn = e.target.closest(".regenerate-image-btn");
+        if (regenerateBtn) {
+          const sceneId = regenerateBtn.dataset.sceneId;
+          await regenerateImageFromUI(sceneId, regenerateBtn);
+          return;
+        }
+      });
+    }
+
+    // 씬 저장
+    async function saveScene(sceneId) {
+      if (!scenesData || !currentSessionId) return;
+
+      const card = document.querySelector(`.scene-card[data-scene-id="${sceneId}"]`);
+      if (!card) return;
+
+      const sceneIdInput = card.querySelector(`.scene-id-input[data-scene-id="${sceneId}"]`);
+      const textarea = card.querySelector(`.scene-text-input[data-scene-id="${sceneId}"]`);
+      
+      if (!sceneIdInput || !textarea) return;
+
+      const newSceneId = sceneIdInput.value.trim();
+      const newSceneText = textarea.value.trim();
+
+      if (!newSceneId) {
+        alert("씬 ID를 입력해주세요.");
+        return;
+      }
+
+      if (!newSceneText) {
+        alert("씬 텍스트를 입력해주세요.");
+        return;
+      }
+
+      // scenesData 업데이트
+      const scene = scenesData.scenes.find((s) => s.scene_id === sceneId);
+      if (scene) {
+        const oldSceneId = scene.scene_id;
+        scene.scene_id = newSceneId;
+        scene.scene_text = newSceneText;
+
+        // scene_id가 변경된 경우 카드의 data-scene-id 속성도 업데이트
+        if (oldSceneId !== newSceneId) {
+          card.setAttribute("data-scene-id", newSceneId);
+          sceneIdInput.setAttribute("data-scene-id", newSceneId);
+          textarea.setAttribute("data-scene-id", newSceneId);
+          
+          // 버튼들의 data-scene-id도 업데이트
+          const saveBtn = card.querySelector(".save-scene-btn");
+          const regenerateBtn = card.querySelector(".regenerate-image-btn");
+          if (saveBtn) saveBtn.setAttribute("data-scene-id", newSceneId);
+          if (regenerateBtn) regenerateBtn.setAttribute("data-scene-id", newSceneId);
+        }
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/api/scenes/update`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sessionId: currentSessionId,
+            scenesJson: scenesData,
+          }),
+        });
+        const json = await res.json();
+
+        if (!json.ok) {
+          alert("씬 저장 실패: " + (json.error || ""));
+          return;
+        }
+
+        alert("✅ 씬 저장 완료!");
+      } catch (e) {
+        alert("씬 저장 실패: " + e.message);
+      }
+    }
+
+    // 이미지 렌더링
+    function renderImages() {
+      const container = document.getElementById("imagesContainer");
+      
+      if (!imagesData || !imagesData.length) {
+        container.innerHTML = "<p style='color: #999;'>이미지가 없습니다.</p>";
+        return;
+      }
+
+      container.innerHTML = '<div class="videos-grid"></div>';
+      const grid = container.querySelector(".videos-grid");
+
+      imagesData.forEach((image) => {
+        const imageUrl = `/sessions/${currentSessionId}/images/${image.sceneId}.png`;
+        const card = document.createElement("div");
+        card.className = "video-card";
+        card.setAttribute("data-scene-id", image.sceneId);
+        card.innerHTML = `
+          <h3>씬 ID: ${image.sceneId}</h3>
+          <img src="${imageUrl}" alt="${image.sceneId}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+          <p style="display: none; color: #999;">이미지를 로드할 수 없습니다.</p>
+          <div class="button-group">
+            <button class="regenerate-image-btn" data-scene-id="${image.sceneId}">🖼️ 이미지 재생성</button>
+            <button class="refresh-image-btn" data-scene-id="${image.sceneId}">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+              </svg>
+            </button>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+
+      // 이벤트 위임을 한 번만 등록 (중복 방지)
+      if (container && !container.dataset.listenerAttached) {
+        container.dataset.listenerAttached = "true";
+        
+        container.addEventListener("click", async (e) => {
+          const regenerateBtn = e.target.closest(".regenerate-image-btn");
+          if (regenerateBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            const sceneId = regenerateBtn.dataset.sceneId;
+            await regenerateImageFromUI(sceneId, regenerateBtn);
+            return;
+          }
+          
+          const refreshBtn = e.target.closest(".refresh-image-btn");
+          if (refreshBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            const sceneId = refreshBtn.dataset.sceneId;
+            await refreshImage(sceneId, refreshBtn);
+            return;
+          }
+        });
+      }
+    }
+
+    // 이미지 재생성 (UI에서 호출)
+    async function regenerateImageFromUI(sceneId, btn) {
+      if (!currentSessionId) return;
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="loading"></span> 재생성 중...';
+
+      try {
+        const res = await fetch(`${API_BASE}/api/regenerate/image`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sessionId: currentSessionId,
+            sceneId: sceneId,
+          }),
+        });
+        const json = await res.json();
+
+        if (!json.ok) {
+          alert("이미지 재생성 실패: " + (json.error || ""));
+          btn.disabled = false;
+          btn.textContent = "🖼️ 이미지 재생성";
+          return;
+        }
+
+        alert("✅ 이미지 재생성 완료!");
+        
+        // 이미지 목록 새로고침
+        await loadImages();
+        
+        btn.disabled = false;
+        btn.textContent = "🖼️ 이미지 재생성";
+      } catch (e) {
+        alert("이미지 재생성 실패: " + e.message);
+        btn.disabled = false;
+        btn.textContent = "🖼️ 이미지 재생성";
+      }
+    }
+
+    // 이미지 새로고침 (해당 씬만)
+    async function refreshImage(sceneId, btnElement) {
+      if (!currentSessionId) return;
+
+      btnElement.disabled = true;
+      btnElement.innerHTML = '<span class="loading"></span> 새로고침 중...';
+
+      try {
+        // DB에서 최신 정보 가져오기
+        const res = await fetch(`${API_BASE}/api/session/${currentSessionId}/load-from-db`, {
+          method: "POST",
+        });
+        const json = await res.json();
+
+        if (!json.ok) {
+          alert("새로고침 실패: " + (json.error || ""));
+          btnElement.disabled = false;
+          btnElement.innerHTML = `
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+              <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+            </svg>
+          `;
+          return;
+        }
+
+        // 해당 씬의 이미지 정보 찾기
+        const updatedImage = json.downloadedImages?.find((img) => img.sceneId === sceneId);
+        if (!updatedImage) {
+          alert(`씬 ${sceneId}의 이미지 정보를 찾을 수 없습니다.`);
+          btnElement.disabled = false;
+          btnElement.innerHTML = `
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+              <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+            </svg>
+          `;
+          return;
+        }
+
+        // imagesData 업데이트
+        const index = imagesData.findIndex((img) => img.sceneId === sceneId);
+        if (index >= 0) {
+          imagesData[index] = updatedImage;
+        } else {
+          imagesData.push(updatedImage);
+        }
+
+        // 해당 카드의 이미지만 업데이트
+        const card = document.querySelector(`.video-card[data-scene-id="${sceneId}"]`);
+        if (card) {
+          const img = card.querySelector("img");
+          if (img) {
+            const newImageUrl = `/sessions/${currentSessionId}/images/${sceneId}.png`;
+            img.src = newImageUrl + "?t=" + Date.now(); // 캐시 방지
+          }
+        }
+
+        btnElement.disabled = false;
+        btnElement.innerHTML = `
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+          </svg>
+        `;
+      } catch (e) {
+        alert("새로고침 실패: " + e.message);
+        btnElement.disabled = false;
+        btnElement.innerHTML = `
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+            <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
+          </svg>
+        `;
+      }
+    }
+
+    // 이미지 목록 로드
+    async function loadImages() {
+      if (!currentSessionId) return;
+
+      try {
+        const res = await fetch(`${API_BASE}/api/session/${currentSessionId}/load-from-db`, {
+          method: "POST",
+        });
+        const json = await res.json();
+
+        if (json.ok) {
+          imagesData = json.downloadedImages || [];
+          renderImages();
+        }
+      } catch (e) {
+        console.error("이미지 목록 로드 실패:", e);
+      }
+    }
 
     // 비디오 목록 로드
     async function loadVideos() {

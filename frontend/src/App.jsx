@@ -1062,7 +1062,8 @@ export default function App() {
             {step2Ready ? "저장완료" : "저장"}
           </button>
           <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 12 }}>
-            <button
+            {/* 디버깅 버튼 주석처리 */}
+            {/* <button
               onClick={() => {
                 setStep2Ready(true);
                 setCurrentStep(3);
@@ -1080,7 +1081,7 @@ export default function App() {
               title="디버깅용: 사진 업로드 없이 다음 단계로"
             >
               🔧 건너뛰기 (디버깅)
-            </button>
+            </button> */}
             <button
               onClick={() => setCurrentStep(3)}
               disabled={!step2Ready}
@@ -1104,6 +1105,81 @@ export default function App() {
       {currentStep === 3 && (
       <div style={{ marginTop: 12 }}>
         <h3 style={{ margin: "0 0 15px 0", fontSize: 25 }}>3단계: 대화 녹음 파일을 업로드해주세요</h3>
+        
+        {/* M2M 대화 가이드 */}
+        <div style={{
+          marginBottom: 20,
+          padding: 20,
+          background: "#f8f9fa",
+          border: "2px solid #e9ecef",
+          borderRadius: 12,
+          fontSize: 14,
+          lineHeight: 1.6,
+        }}>
+          <h4 style={{ margin: "0 0 12px 0", fontSize: 18, fontWeight: 700, color: "#1d4ed8" }}>
+            📋 M2M 대화 가이드
+          </h4>
+          <p style={{ margin: "0 0 12px 0", fontSize: 13, color: "#495057", fontWeight: 600 }}>
+            가이드 질문을 참고하며, 서로의 사진 순간에 궁금한 것에 대해 자유롭게 묻고 답해주세요!
+            <br />
+            함께 추억사진을 함께 보며 다음 질문을 이어가주시면 됩니다.
+          </p>
+          <p style={{ margin: "0 0 16px 0", fontSize: 13, color: "#dc2626", fontWeight: 600 }}>
+            ⏱️ 대화 시간은 10분입니다.
+            <br />
+            10분 동안 사진 속 모든 친구들에 대해 다양한 이야기를 나눠주세요.
+          </p>
+          
+          <div style={{ marginTop: 16 }}>
+            <p style={{ margin: "0 0 8px 0", fontSize: 14, fontWeight: 700, color: "#212529" }}>
+              1. 사진 속 친구들은 누구인가요? 왼쪽부터 설명해주세요.
+            </p>
+            <p style={{ margin: "0 0 12px 0", fontSize: 12, color: "#6c757d", fontStyle: "italic" }}>
+              *영상 생성을 위한 절차로, 반드시 이름을 명명하며 대화를 시작해주세요. 이후 대화에서도 [OO이랑~ ]과 같이 이름을 사용하여 추억을 공유해주세요.
+            </p>
+            <div style={{
+              margin: "0 0 16px 0",
+              padding: 12,
+              background: "#ffffff",
+              border: "1px solid #dee2e6",
+              borderRadius: 8,
+              fontSize: 12,
+              color: "#495057",
+            }}>
+              <strong>예시:</strong>
+              <br />
+              " 왼쪽에서부터 1,2,3,4 번이라고 했을 때, 1번은 엄마친구 [박OO] / 2번은 [사진 주인인 엄마]고 / 3번은 지금도 친한 친구 [김OO] 이야"
+            </div>
+          </div>
+
+          <div style={{ marginTop: 16 }}>
+            <p style={{ margin: "0 0 8px 0", fontSize: 14, fontWeight: 700, color: "#212529" }}>
+              2. 사진 속 각 친구들마다의 추억을 공유해주세요.
+            </p>
+            <ul style={{ margin: "8px 0 12px 0", paddingLeft: 20, fontSize: 13, color: "#495057" }}>
+              <li>당시 그 친구와 어떻게 친해졌나요?</li>
+              <li>당시 그 친구와 만나면 주로 무엇을 함께 했나요?</li>
+              <li>당시 그 친구와 함께 즐겨찾던 장소 혹은 기억에 남는 장소는?</li>
+              <li>그 친구와 함께 즐겨먹던 음식은?</li>
+            </ul>
+            <div style={{
+              margin: "0 0 0 0",
+              padding: 12,
+              background: "#ffffff",
+              border: "1px solid #dee2e6",
+              borderRadius: 8,
+              fontSize: 12,
+              color: "#495057",
+            }}>
+              <strong>예시:</strong>
+              <br />
+              " 먼저 박OO 이 친구랑은 대학 동기여서 친해졌어. 같이 항상 버스를 타고 다녔는데 ~ "
+              <br />
+              " 김OO 이 친구는 나랑 항상 이대 쪽에가서 쇼핑하던 친구야 "
+            </div>
+          </div>
+        </div>
+
         <h4 style={{ margin: "8px 0", fontSize: 21, color: "#555" }}>🎙️ 대화 녹음 업로드</h4>
 
       <input
@@ -1307,7 +1383,8 @@ export default function App() {
         {scenesLoading ? "대화 분석 중..." : "대화 분석하기"}
       </button>
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 12 }}>
-          <button
+          {/* 디버깅 버튼 주석처리 */}
+          {/* <button
             onClick={() => {
               setStep3Ready(true);
               setCurrentStep(4);
@@ -1325,7 +1402,7 @@ export default function App() {
             title="디버깅용: 음성 파일 업로드 없이 다음 단계로"
           >
             🔧 건너뛰기 (디버깅)
-          </button>
+          </button> */}
           <button
             onClick={() => setCurrentStep(4)}
             disabled={!step3Ready}
@@ -1350,63 +1427,54 @@ export default function App() {
       {currentStep === 4 && (
       <div style={{ marginTop: 12 }}>
         <h3 style={{ margin: "0 0 15px 0", fontSize: 25 }}>4단계: 영상 생성</h3>
-        <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center", marginBottom: 12 }}>
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "stretch", marginBottom: 12 }}>
+          {/* 이미지 생성 + 영상 생성 통합 버튼 */}
           <button
-            disabled={!sessionId || runImagesLoading || scenesLoading || sttLoading || audioUploading}
+            disabled={!sessionId || runImagesLoading || runVideosLoading || scenesLoading || sttLoading || audioUploading}
             onClick={async () => {
+              // 1단계: 이미지 생성
               setRunImagesLoading(true);
               try {
-                const res = await fetch(`http://localhost:3001/api/session/${sessionId}/run-images`, {
+                const imageRes = await fetch(`http://localhost:3001/api/session/${sessionId}/run-images`, {
                   method: "POST",
                 });
-                const json = await res.json();
-                console.log("run-images:", json);
+                const imageJson = await imageRes.json();
+                console.log("run-images:", imageJson);
 
-                if (!json.ok) alert("이미지 생성 실패: " + (json.error || ""));
-                else {
-                  setRunImagesResults(json.results || []);
-                  setRunVideosResults(null);
-                  setFinalVideoPath("");
-                  setFinalVideoUrl("");
-                  alert("이미지 생성 완료!");
+                if (!imageJson.ok) {
+                  alert("이미지 생성 실패: " + (imageJson.error || ""));
+                  return;
                 }
+                setRunImagesResults(imageJson.results || []);
+                setRunVideosResults(null);
+                setFinalVideoPath("");
+                setFinalVideoUrl("");
+                alert("이미지 생성 완료!");
               } catch (e) {
                 console.error(e);
                 alert("이미지 생성 실패: " + (e?.message || String(e)));
+                return;
               } finally {
                 setRunImagesLoading(false);
               }
-            }}
-            style={{
-              padding: "12px 22px",
-              borderRadius: 10,
-              border: "1px solid #1d4ed8",
-              background: "#2563eb",
-              color: "white",
-              fontWeight: 700,
-            }}
-          >
-            {runImagesLoading ? "이미지 생성 중..." : "이미지 생성"}
-          </button>
 
-          <button
-            disabled={!sessionId || runVideosLoading || scenesLoading || sttLoading || audioUploading}
-            onClick={async () => {
+              // 2단계: 영상 생성
               setRunVideosLoading(true);
               try {
-                const res = await fetch(`http://localhost:3001/api/session/${sessionId}/run-videos`, {
+                const videoRes = await fetch(`http://localhost:3001/api/session/${sessionId}/run-videos`, {
                   method: "POST",
                 });
-                const json = await res.json();
-                console.log("run-videos:", json);
+                const videoJson = await videoRes.json();
+                console.log("run-videos:", videoJson);
 
-                if (!json.ok) alert("영상 생성 실패: " + (json.error || ""));
-                else {
-                  setRunVideosResults(json.results || []);
-                  setFinalVideoPath("");
-                  setFinalVideoUrl("");
-                  alert("영상 생성 완료!");
+                if (!videoJson.ok) {
+                  alert("영상 생성 실패: " + (videoJson.error || ""));
+                  return;
                 }
+                setRunVideosResults(videoJson.results || []);
+                setFinalVideoPath("");
+                setFinalVideoUrl("");
+                alert("영상 생성 완료!");
               } catch (e) {
                 console.error(e);
                 alert("영상 생성 실패: " + (e?.message || String(e)));
@@ -1421,11 +1489,17 @@ export default function App() {
               background: "#2563eb",
               color: "white",
               fontWeight: 700,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
             }}
           >
-            {runVideosLoading ? "영상 생성 중..." : "영상 생성"}
+            {runImagesLoading || runVideosLoading
+              ? (runImagesLoading ? "이미지 생성 중..." : "영상 생성 중...")
+              : "이미지 & 영상 생성"}
           </button>
 
+          {/* 영상 합치기 버튼 → '추억영상 시청'으로 변경 */}
           <button
             disabled={!sessionId || concatLoading || scenesLoading || sttLoading || audioUploading}
             onClick={async () => {
@@ -1443,7 +1517,8 @@ export default function App() {
                   setFinalVideoUrl(
                     json.finalPath ? `http://localhost:3001/sessions/${sessionId}/final.mp4` : ""
                   );
-                  alert("영상 합치기 완료! final.mp4 생성됨");
+                  alert("추억영상 생성 완료! 5단계로 이동합니다.");
+                  setCurrentStep(5);
                 }
               } catch (e) {
                 console.error(e);
@@ -1455,17 +1530,31 @@ export default function App() {
             style={{
               padding: "12px 22px",
               borderRadius: 10,
-              border: "1px solid #1d4ed8",
-              background: "#2563eb",
+              border: "1px solid #dc2626",
+              background: "#ef4444",
               color: "white",
               fontWeight: 700,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
             }}
           >
-            {concatLoading ? "영상 합치는 중..." : "영상 합치기"}
+            {concatLoading ? "영상 합치는 중..." : (
+              <>
+                추억영상 시청
+                <br />
+                <span style={{ fontSize: 11, fontWeight: 500, opacity: 0.9 }}>
+                  (연구자 안내 전까지 누르지 마시오.)
+                </span>
+              </>
+            )}
           </button>
         </div>
         
-        {/* 한 번에 모든 작업 수행하는 버튼 (선택사항) */}
+        {/* 디버깅 버튼들 주석처리 */}
+        {/*
+        한 번에 모든 작업 수행하는 버튼 (선택사항)
         <button
           disabled={
             !sessionId ||
@@ -1565,8 +1654,10 @@ export default function App() {
             ? "추억 영상 생성 중..."
             : "추억 영상 생성하기 (전체 자동)"}
         </button>
+        */}
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 12 }}>
-          <button
+          {/* 디버깅 버튼 주석처리 */}
+          {/* <button
             onClick={() => setCurrentStep(5)}
             style={{
               padding: "10px 16px",
@@ -1581,7 +1672,7 @@ export default function App() {
             title="디버깅용: 영상 생성 없이 다음 단계로"
           >
             🔧 건너뛰기 (디버깅)
-          </button>
+          </button> */}
           <button
             onClick={() => setCurrentStep(5)}
             disabled={!step4Ready}
@@ -1869,144 +1960,151 @@ export default function App() {
           )}
           {finalVideoPath && (
             <>
-          <p style={{ marginTop: 8, fontSize: 12, color: "#555" }}>
-            ✅ final.mp4 생성됨: {finalVideoPath}
-          </p>
-          {finalVideoUrl && (
-            <>
-              <a
-                href={finalVideoUrl}
-                download="final.mp4"
-                style={{
-                  display: "inline-block",
-                  marginTop: 6,
-                  padding: "8px 12px",
-                  borderRadius: 10,
-                  border: "1px solid #1d4ed8",
-                  background: "#ffffff",
-                  color: "#1d4ed8",
-                  textDecoration: "none",
-                  fontSize: 12,
-                  fontWeight: 700,
-                }}
-              >
-                final.mp4 다운로드
-              </a>
-              {/* Custom playback controls (syncs with YouTube audio) */}
-              <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8 }}>
-                <button
-                  disabled={!ytVideoId}
-                  onClick={() => {
-                    const v = finalVideoRef.current;
-                    if (!v) return;
-                    v.play().catch(() => {});
-                    if (ytPlayerRef.current && ytReadyRef.current) {
-                      if (!ytHasStartedRef.current) {
-                        ytPlayerRef.current.seekTo(YT_START_SECONDS, true);
-                        ytHasStartedRef.current = true;
-                      }
-                      ytPlayerRef.current.playVideo();
-                      fadeInYouTube(ytPlayerRef.current);
-                    } else if (ytPlayerRef.current) {
-                      ytPendingPlayRef.current = true;
-                    }
-                  }}
-                  style={{
-                    width: 36,
-                    height: 36,
-                    padding: 0,
-                    borderRadius: "50%",
-                    border: "1px solid #1d4ed8",
-                    background: "#2563eb",
-                    color: "#fff",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    opacity: ytVideoId ? 1 : 0.5,
-                  }}
-                  title="재생"
-                  aria-label="재생"
-                >
-                  <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-                    <path d="M8 5v14l11-7z" fill="currentColor" />
-                  </svg>
-                </button>
-                <button
-                  disabled={!ytVideoId}
-                  onClick={() => {
-                    const v = finalVideoRef.current;
-                    if (!v) return;
-                    v.pause();
-                    if (ytPlayerRef.current && ytReadyRef.current) {
-                      fadeOutYouTube(ytPlayerRef.current, () => {
-                        if (ytPlayerRef.current && ytReadyRef.current) {
-                          ytPlayerRef.current.pauseVideo();
-                        }
-                      });
-                    }
-                  }}
-                  style={{
-                    width: 36,
-                    height: 36,
-                    padding: 0,
-                    borderRadius: "50%",
-                    border: "1px solid #1d4ed8",
-                    background: "#ffffff",
-                    color: "#1d4ed8",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    opacity: ytVideoId ? 1 : 0.5,
-                  }}
-                  title="일시정지"
-                  aria-label="일시정지"
-                >
-                  <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-                    <path d="M6 5h4v14H6zM14 5h4v14h-4z" fill="currentColor" />
-                  </svg>
-                </button>
-                <button
-                  disabled={!ytVideoId}
-                  onClick={() => {
-                    const v = finalVideoRef.current;
-                    if (!v) return;
-                    v.currentTime = 0;
-                    ytFadeIntervalRef.current = null; // 페이드 상태 리셋
-                    v.play().catch(() => {});
-                    if (ytPlayerRef.current && ytReadyRef.current) {
-                      ytPlayerRef.current.seekTo(YT_START_SECONDS, true);
-                      ytHasStartedRef.current = true;
-                      ytPlayerRef.current.playVideo();
-                      fadeInYouTube(ytPlayerRef.current);
-                    } else if (ytPlayerRef.current) {
-                      ytPendingPlayRef.current = true;
-                    }
-                  }}
-                  style={{
-                    width: 36,
-                    height: 36,
-                    padding: 0,
-                    borderRadius: "50%",
-                    border: "1px solid #1d4ed8",
-                    background: "#ffffff",
-                    color: "#1d4ed8",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    opacity: ytVideoId ? 1 : 0.5,
-                  }}
-                  title="처음부터"
-                  aria-label="처음부터"
-                >
-                  <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-                    <path d="M6 5h2v14H6zM9 12l9-7v14z" fill="currentColor" />
-                  </svg>
-                </button>
-              </div>
-              {!ytVideoId && (
-                <div style={{ marginTop: 6, fontSize: 11, color: "#888" }}>
-                  음악 링크를 적용한 뒤에 영상 재생이 가능해요.
-                </div>
+              {/* npm start 시에만 주석처리 (개발 모드) */}
+              {!import.meta.env.DEV && (
+                <>
+                  <p style={{ marginTop: 8, fontSize: 12, color: "#555" }}>
+                    ✅ final.mp4 생성됨: {finalVideoPath}
+                  </p>
+                  {finalVideoUrl && (
+                    <>
+                      <a
+                        href={finalVideoUrl}
+                        download="final.mp4"
+                        style={{
+                          display: "inline-block",
+                          marginTop: 6,
+                          padding: "8px 12px",
+                          borderRadius: 10,
+                          border: "1px solid #1d4ed8",
+                          background: "#ffffff",
+                          color: "#1d4ed8",
+                          textDecoration: "none",
+                          fontSize: 12,
+                          fontWeight: 700,
+                        }}
+                      >
+                        final.mp4 다운로드
+                      </a>
+                      {/* Custom playback controls (syncs with YouTube audio) */}
+                      <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8 }}>
+                        <button
+                          disabled={!ytVideoId}
+                          onClick={() => {
+                            const v = finalVideoRef.current;
+                            if (!v) return;
+                            v.play().catch(() => {});
+                            if (ytPlayerRef.current && ytReadyRef.current) {
+                              if (!ytHasStartedRef.current) {
+                                ytPlayerRef.current.seekTo(YT_START_SECONDS, true);
+                                ytHasStartedRef.current = true;
+                              }
+                              ytPlayerRef.current.playVideo();
+                              fadeInYouTube(ytPlayerRef.current);
+                            } else if (ytPlayerRef.current) {
+                              ytPendingPlayRef.current = true;
+                            }
+                          }}
+                          style={{
+                            width: 36,
+                            height: 36,
+                            padding: 0,
+                            borderRadius: "50%",
+                            border: "1px solid #1d4ed8",
+                            background: "#2563eb",
+                            color: "#fff",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            opacity: ytVideoId ? 1 : 0.5,
+                          }}
+                          title="재생"
+                          aria-label="재생"
+                        >
+                          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                            <path d="M8 5v14l11-7z" fill="currentColor" />
+                          </svg>
+                        </button>
+                        <button
+                          disabled={!ytVideoId}
+                          onClick={() => {
+                            const v = finalVideoRef.current;
+                            if (!v) return;
+                            v.pause();
+                            if (ytPlayerRef.current && ytReadyRef.current) {
+                              fadeOutYouTube(ytPlayerRef.current, () => {
+                                if (ytPlayerRef.current && ytReadyRef.current) {
+                                  ytPlayerRef.current.pauseVideo();
+                                }
+                              });
+                            }
+                          }}
+                          style={{
+                            width: 36,
+                            height: 36,
+                            padding: 0,
+                            borderRadius: "50%",
+                            border: "1px solid #1d4ed8",
+                            background: "#ffffff",
+                            color: "#1d4ed8",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            opacity: ytVideoId ? 1 : 0.5,
+                          }}
+                          title="일시정지"
+                          aria-label="일시정지"
+                        >
+                          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                            <path d="M6 5h4v14H6zM14 5h4v14h-4z" fill="currentColor" />
+                          </svg>
+                        </button>
+                        <button
+                          disabled={!ytVideoId}
+                          onClick={() => {
+                            const v = finalVideoRef.current;
+                            if (!v) return;
+                            v.currentTime = 0;
+                            ytFadeIntervalRef.current = null; // 페이드 상태 리셋
+                            v.play().catch(() => {});
+                            if (ytPlayerRef.current && ytReadyRef.current) {
+                              ytPlayerRef.current.seekTo(YT_START_SECONDS, true);
+                              ytHasStartedRef.current = true;
+                              ytPlayerRef.current.playVideo();
+                              fadeInYouTube(ytPlayerRef.current);
+                            } else if (ytPlayerRef.current) {
+                              ytPendingPlayRef.current = true;
+                            }
+                          }}
+                          style={{
+                            width: 36,
+                            height: 36,
+                            padding: 0,
+                            borderRadius: "50%",
+                            border: "1px solid #1d4ed8",
+                            background: "#ffffff",
+                            color: "#1d4ed8",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            opacity: ytVideoId ? 1 : 0.5,
+                          }}
+                          title="처음부터"
+                          aria-label="처음부터"
+                        >
+                          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                            <path d="M6 5h2v14H6zM9 12l9-7v14z" fill="currentColor" />
+                          </svg>
+                        </button>
+                      </div>
+                      {!ytVideoId && (
+                        <div style={{ marginTop: 6, fontSize: 11, color: "#888" }}>
+                          음악 링크를 적용한 뒤에 영상 재생이 가능해요.
+                        </div>
+                      )}
+                    </>
+                  )}
+                </>
               )}
               {/* YouTube Music 검색 및 선택 (only after final.mp4 is rendered) */}
               <div
@@ -2209,20 +2307,21 @@ export default function App() {
                   style={{ width: 1, height: 1, opacity: 0, pointerEvents: "none" }}
                 />
               </div>
-              <video
-                src={finalVideoUrl}
-                ref={finalVideoRef}
-                controls
-                onPlay={() => {
-                  if (ytVideoId) return;
-                  const v = finalVideoRef.current;
-                  if (!v) return;
-                  v.pause();
-                }}
-                style={{ marginTop: 12, width: "100%", maxWidth: 640, borderRadius: 12 }}
-              />
-            </>
-          )}
+              {/* 비디오 플레이어 (항상 표시) */}
+              {finalVideoUrl && (
+                <video
+                  src={finalVideoUrl}
+                  ref={finalVideoRef}
+                  controls
+                  onPlay={() => {
+                    if (ytVideoId) return;
+                    const v = finalVideoRef.current;
+                    if (!v) return;
+                    v.pause();
+                  }}
+                  style={{ marginTop: 12, width: "100%", maxWidth: 640, borderRadius: 12 }}
+                />
+              )}
             </>
           )}
         </div>

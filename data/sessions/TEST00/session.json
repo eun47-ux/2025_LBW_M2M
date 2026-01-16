@@ -1,4 +1,70 @@
 {
   "sessionId": "TEST00",
-  "createdAt": "2026-01-15T23:38:49.111Z"
+  "createdAt": "2026-01-16T00:41:57.896Z",
+  "ownerId": "mnpx6kv4",
+  "labelMap": {
+    "1": "mnpx6kv4",
+    "2": "6j5m189b",
+    "3": "llrhvekz"
+  },
+  "cropMetaArr": [
+    {
+      "id": "6j5m189b",
+      "rect": {
+        "x": 178,
+        "y": 0,
+        "width": 265,
+        "height": 431
+      }
+    },
+    {
+      "id": "llrhvekz",
+      "rect": {
+        "x": 322,
+        "y": 8,
+        "width": 265,
+        "height": 436
+      }
+    },
+    {
+      "id": "mnpx6kv4",
+      "rect": {
+        "x": 104,
+        "y": 273,
+        "width": 265,
+        "height": 436
+      }
+    }
+  ],
+  "originalSavedName": "original.jpg",
+  "updatedAt": "2026-01-16T00:42:36.828Z",
+  "labels": {
+    "filename": "labels.json",
+    "path": "D:\\2025_LBW_M2M\\data\\sessions\\TEST00\\labels.json",
+    "createdAt": "2026-01-16T00:42:37.148Z"
+  },
+  "audio": {
+    "filename": "recording.m4a",
+    "path": "D:\\2025_LBW_M2M\\data\\sessions\\TEST00\\audio\\recording.m4a",
+    "uploadedAt": "2026-01-16T00:42:48.441Z",
+    "mimetype": "audio/x-m4a",
+    "size": 7329303
+  },
+  "transcript": {
+    "filename": "transcript.txt",
+    "path": "D:\\2025_LBW_M2M\\data\\sessions\\TEST00\\transcript.txt",
+    "createdAt": "2026-01-16T00:43:32.138Z",
+    "audioUsed": "recording.m4a"
+  },
+  "scenes": {
+    "filename": "scenes.json",
+    "path": "D:\\2025_LBW_M2M\\data\\sessions\\TEST00\\scenes.json",
+    "createdAt": "2026-01-16T00:43:44.395Z",
+    "ownerLabel": "1",
+    "participants": [
+      "1",
+      "2",
+      "3"
+    ]
+  }
 }

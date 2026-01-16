@@ -23,5 +23,11 @@ export const COMFY_API_KEY = process.env.COMFY_API_KEY || "";
 export const ADMIN_SESSIONS_DIR = path.join(__dirname, "sessions");
 fs.mkdirSync(ADMIN_SESSIONS_DIR, { recursive: true });
 
+// 메인 백엔드 세션 디렉토리 (labels.json 등 참조용)
+export const MAIN_SESSIONS_DIR = path.join(__dirname, "..", "data", "sessions");
+
 // 워크플로우 경로 (재생성용)
 export const VIDEO_WORKFLOW_PATH = path.join(__dirname, "..", "backend", "workflows", "M2M_video_api.json");
+
+// Python 스크립트 경로 (이미지 재생성용)
+export const PYTHON_SCRIPT_PATH = path.join(__dirname, "..", "backend", "scripts", "generate_image.py");

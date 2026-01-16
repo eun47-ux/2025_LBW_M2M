@@ -7,7 +7,8 @@ import fs from "fs";
 import { fileURLToPath } from "url";
 import { PORT, ADMIN_SESSIONS_DIR } from "./config.js";
 import { loadSessionFromDB } from "./services/downloadService.js";
-import { regenerateVideo } from "./services/regenerateService.js";
+import { regenerateVideo, regenerateImage } from "./services/regenerateService.js";
+import { updateScenes, getScenes } from "./services/firestoreService.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -145,6 +146,61 @@ app.post("/api/session/:sessionId/regenerate/:sceneId", async (req, res) => {
     return res.status(500).json({
       ok: false,
       error: "regenerate failed",
+      detail: e?.message || String(e),
+    });
+  }
+});
+
+/**
+ * 씬 파일 업데이트
+ * POST /api/scenes/update
+ * Body: { sessionId: string, scenesJson: object }
+ */
+app.post("/api/scenes/update", async (req, res) => {
+  try {
+    const { sessionId, scenesJson } = req.body;
+    if (!sessionId || !scenesJson) {
+      return res.status(400).json({ ok: false, error: "sessionId and scenesJson are required" });
+    }
+
+    // Firestore 업데이트
+    await updateScenes(sessionId, scenesJson);
+
+    // 로컬 파일 저장
+    const sessionDir = path.join(ADMIN_SESSIONS_DIR, sessionId);
+    const scenesPath = path.join(sessionDir, "scenes.json");
+    fs.writeFileSync(scenesPath, JSON.stringify(scenesJson, null, 2), "utf-8");
+
+    return res.json({ ok: true, sessionId, scenesPath });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({
+      ok: false,
+      error: "scenes update failed",
+      detail: e?.message || String(e),
+    });
+  }
+});
+
+/**
+ * 이미지 재생성
+ * POST /api/regenerate/image
+ * Body: { sessionId: string, sceneId: string }
+ */
+app.post("/api/regenerate/image", async (req, res) => {
+  try {
+    const { sessionId, sceneId } = req.body;
+    if (!sessionId || !sceneId) {
+      return res.status(400).json({ ok: false, error: "sessionId and sceneId are required" });
+    }
+
+    const result = await regenerateImage(sessionId, sceneId);
+    return res.json({ ok: true, ...result });
+  } catch (e) {
+    console.error(e);
+    return res.status(500).json({
+      ok: false,
+      error: "image regenerate failed",
       detail: e?.message || String(e),
     });
   }

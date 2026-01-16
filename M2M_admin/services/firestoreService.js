@@ -143,3 +143,59 @@ export async function updateComfyResults(sessionId, comfyResults) {
 
   return { ok: true };
 }
+
+/**
+ * Firestore에서 scenes.json 가져오기
+ * Firestore 구조: SessionID/scenes/scenesData (필드)
+ */
+export async function getScenes(sessionId) {
+  const firestore = initFirestore();
+  const scenesRef = firestore.collection(sessionId).doc("scenes");
+  const doc = await scenesRef.get();
+  
+  if (!doc.exists) {
+    return null;
+  }
+
+  const data = doc.data();
+  return data.scenesData || null;
+}
+
+/**
+ * scenes.json 업데이트
+ * Firestore 구조: SessionID/scenes/scenesData (필드)
+ */
+export async function updateScenes(sessionId, scenesJson) {
+  const firestore = initFirestore();
+  const scenesRef = firestore.collection(sessionId).doc("scenes");
+  
+  await scenesRef.set(
+    {
+      scenesData: scenesJson,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    },
+    { merge: true }
+  );
+
+  return { ok: true };
+}
+
+/**
+ * 이미지 URL 업데이트 (재생성 후)
+ */
+export async function updateImageUrl(sessionId, sceneId, newImageUrl) {
+  const firestore = initFirestore();
+  const imagesRef = firestore.collection(sessionId).doc("generatedImages");
+  
+  await imagesRef.set(
+    {
+      [sceneId]: {
+        imageUrl: newImageUrl,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      },
+    },
+    { merge: true }
+  );
+
+  return { ok: true, sceneId, newImageUrl };
+}

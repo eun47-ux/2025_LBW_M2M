@@ -1,0 +1,15 @@
+{
+  "sessionId": "TEST000",
+  "createdAt": "2026-01-15T23:59:16.505Z",
+  "scenes": {
+    "filename": "scenes.json",
+    "path": "D:\\2025_LBW_M2M\\data\\sessions\\TEST000\\scenes.json",
+    "createdAt": "2026-01-15T23:59:40.704Z",
+    "ownerLabel": "1",
+    "participants": [
+      "1",
+      "2",
+      "3"
+    ]
+  }
+}
